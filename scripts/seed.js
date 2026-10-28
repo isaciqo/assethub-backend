@@ -17,6 +17,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const container = require('../src/interfaces/http/container');
+const { assertOwnDatabase } = require('../src/database/connection');
 const logger = require('../src/lib/logger');
 const signaturePng = require('./lib/signaturePng');
 const { UNITS, DEMO_IMPORT_UNIT, SCENARIO_ROWS, NEW_ARRIVAL_ROWS, SCENARIO_CODES, buildRows, toCsv, rng } = require('./lib/syntheticData');
@@ -243,11 +244,13 @@ if (require.main === module) {
   (async () => {
     const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/assethub';
     await mongoose.connect(uri);
+    // Antes de apagar qualquer coisa: o banco é mesmo do Patrimônio Ágil?
+    await assertOwnDatabase();
     if (process.argv.includes('--reset')) {
       await mongoose.connection.dropDatabase();
       console.log(`• Banco "${mongoose.connection.name}" apagado`);
     }
-    await Promise.all(Object.values(mongoose.models).map(m => m.syncIndexes()));
+    await Promise.all(Object.values(mongoose.models).map(m => m.createIndexes()));
     const done = await seedIfEmpty(process.argv.includes('--demo') ? 'demo' : undefined);
     if (!done) console.log('Banco já tem dados — use "npm run seed:reset" para recriar.');
     await mongoose.disconnect();
