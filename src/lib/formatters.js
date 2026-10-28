@@ -112,6 +112,7 @@ function formatCheck(c) {
 function formatDiscrepancy(d) {
   return {
     id: d.discrepancy_id,
+    source: d.source || 'inventario',
     inventoryId: d.inventory_id,
     unitId: d.unit_id,
     assetId: d.asset_id,
@@ -228,7 +229,29 @@ function formatEvidence(e) {
   };
 }
 
+function formatPossessionCheck(c) {
+  if (!c) return null;
+  const answered = c.items.filter(i => i.has_it !== null);
+  return {
+    id: c.check_id,
+    number: c.number,
+    userId: c.user_id,
+    userName: c.user_name,
+    requestedByName: c.requested_by_name || '',
+    status: c.status,
+    items: c.items.map(i => ({
+      assetId: i.asset_id, code: i.code, description: i.description, location: i.location, hasIt: i.has_it, note: i.note || '',
+    })),
+    total: c.items.length,
+    confirmed: answered.filter(i => i.has_it).length,
+    missing: answered.filter(i => !i.has_it).length,
+    answeredAt: iso(c.answered_at),
+    createdAt: iso(c.createdAt),
+  };
+}
+
 module.exports = {
+  formatPossessionCheck,
   iso,
   formatUser,
   formatUnit,

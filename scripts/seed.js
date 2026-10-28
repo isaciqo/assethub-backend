@@ -3,7 +3,7 @@
 // reais do TJPA). Também (re)gera as planilhas de exemplo em sample-data/.
 //
 // Dois modos (SEED_MODE ou --demo):
-//   zerado (padrão) → 1 unidade com salas e 3 usuários; nenhum bem, inventário
+//   zerado (padrão) → 1 unidade com salas e 5 usuários; nenhum bem, inventário
 //                     ou movimentação — os itens são cadastrados pela pessoa.
 //   demo            → 4 unidades, 5 usuários, 190 bens, inventário e movimentações.
 //
@@ -54,6 +54,8 @@ const BLANK_USERS = [
   { name: 'Márcia Andrade', email: 'admin@tjpa.demo', role: 'admin', registration: '200101' },
   { name: 'Roberto Farias', email: 'gerente@tjpa.demo', role: 'gestor', registration: '200102' },
   { name: 'Lucas Ferreira', email: 'estagiario@tjpa.demo', role: 'conferente', registration: '200103' },
+  { name: 'Paula Menezes', email: 'servidora@tjpa.demo', role: 'servidor', registration: '200104' },
+  { name: 'Diego Santos', email: 'servidor@tjpa.demo', role: 'servidor', registration: '200105' },
 ];
 
 async function seedBlank() {

@@ -11,7 +11,7 @@ module.exports = [
     handler: 'userController.list',
     middlewares: [authMiddleware],
     validation: { query: Joi.object({ role: Joi.string().valid(...ROLES).optional(), unit_id: Joi.string().optional() }) },
-    swagger: doc('Users', 'Lista pessoas (para escolher aprovadores, quem entrega e quem recebe)'),
+    swagger: doc('Users', 'Lista pessoas (para escolher aprovadores, quem envia e quem recebe)'),
   },
   {
     method: 'post',

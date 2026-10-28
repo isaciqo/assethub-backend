@@ -63,8 +63,8 @@ module.exports = [
     },
     swagger: doc('Movements', 'Abre movimentação'),
   },
-  { method: 'get', path: '/movements/:movement_id', handler: 'movementController.detail', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Movements', 'Detalhe com histórico encadeado, evidências e ações disponíveis') },
-  { method: 'get', path: '/movements/:movement_id/term.pdf', handler: 'movementController.term', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Movements', 'Termo de entrega e recebimento em PDF') },
+  { method: 'get', path: '/movements/:movement_id', handler: 'movementController.detail', middlewares: [authMiddleware], servidor: true, validation: { params: byId }, swagger: doc('Movements', 'Detalhe com histórico encadeado, evidências e ações disponíveis') },
+  { method: 'get', path: '/movements/:movement_id/term.pdf', handler: 'movementController.term', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Movements', 'Termo de envio e recebimento em PDF') },
   {
     method: 'post',
     path: '/movements/:movement_id/approval',
@@ -78,14 +78,16 @@ module.exports = [
     path: '/movements/:movement_id/delivery',
     handler: 'movementController.deliver',
     middlewares: [authMiddleware],
+    servidor: true,
     validation: { params: byId, body: Joi.object({ ...handover, carrier: carrier.optional() }) },
-    swagger: doc('Movements', 'Confirma entrega (estado, assinatura, fotos)'),
+    swagger: doc('Movements', 'Confirma envio (estado, assinatura, fotos)'),
   },
   {
     method: 'post',
     path: '/movements/:movement_id/receipt',
     handler: 'movementController.receive',
     middlewares: [authMiddleware],
+    servidor: true,
     validation: {
       params: byId,
       body: Joi.object({ ...handover, has_issue: Joi.boolean().optional(), issue_description: Joi.string().allow('').max(1000).optional() }),
@@ -106,7 +108,7 @@ module.exports = [
     handler: 'movementController.cancel',
     middlewares: [authMiddleware],
     validation: { params: byId, body: Joi.object({ note: Joi.string().min(3).max(500).required() }) },
-    swagger: doc('Movements', 'Cancela antes da entrega'),
+    swagger: doc('Movements', 'Cancela antes do envio'),
   },
   {
     method: 'get',

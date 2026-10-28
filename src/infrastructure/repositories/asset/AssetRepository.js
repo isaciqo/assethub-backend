@@ -34,6 +34,14 @@ class AssetRepository {
 
   // Sem paginação — exportação e snapshot offline. Teto de segurança alto o
   // bastante para uma unidade grande do interior.
+  // Bens "no nome" da pessoa: o cadastro guarda o responsável por nome (é o que
+  // vem da planilha), então compara o nome inteiro sem diferenciar maiúsculas.
+  async findByResponsible(name) {
+    if (!String(name || '').trim()) return [];
+    const rx = new RegExp(`^\\s*${escapeRegex(String(name).trim())}\\s*$`, 'i');
+    return Asset.find({ responsible_name: rx, status: { $ne: 'baixado' } }).sort({ location: 1, code: 1 });
+  }
+
   async findAll(query = {}) {
     return Asset.find(this.buildFilter(query)).sort({ location: 1, code: 1 }).limit(50000);
   }

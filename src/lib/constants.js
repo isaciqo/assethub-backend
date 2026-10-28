@@ -1,7 +1,9 @@
 // Enums de domínio centralizados — os schemas Joi, os models e o frontend
 // (src/lib/labels.ts) precisam concordar com esses valores.
 
-const ROLES = ['admin', 'gestor', 'conferente'];
+// servidor: pessoa que não é da área de patrimônio — só vê os próprios bens e
+// as tarefas que o gerente gera para ela (enviar, receber, validar).
+const ROLES = ['admin', 'gestor', 'conferente', 'servidor'];
 
 const CONSERVATION_STATUS = ['novo', 'bom', 'regular', 'ruim', 'inservivel'];
 

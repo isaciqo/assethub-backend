@@ -6,6 +6,7 @@ const inventoryRoutes = require('./inventory/inventoryRoutes');
 const discrepancyRoutes = require('./discrepancy/discrepancyRoutes');
 const movementRoutes = require('./movement/movementRoutes');
 const metaRoutes = require('./meta/metaRoutes');
+const possessionRoutes = require('./possession/possessionRoutes');
 const validationMiddleware = require('../middlewares/validationMiddleware');
 
 const API_PREFIX = '/api/v1';
@@ -19,7 +20,17 @@ const ALL_ROUTES = [
   ...discrepancyRoutes,
   ...movementRoutes,
   ...metaRoutes,
+  ...possessionRoutes,
 ];
+
+// O perfil servidor só alcança as rotas marcadas com `servidor: true` — o
+// resto do sistema (inventários, pendências, cadastro…) fica fechado para ele.
+const servidorGuard = route => (req, res, next) => {
+  if (req.user?.role === 'servidor' && !route.servidor) {
+    return res.status(403).json({ error: 'Forbidden', message: 'Seu perfil não tem acesso a esta área' });
+  }
+  return next();
+};
 
 const registerRoutes = (app, routes, container) => {
   routes.forEach(route => {
@@ -30,7 +41,7 @@ const registerRoutes = (app, routes, container) => {
     const validate = validationMiddleware(route.validation);
     const fullPath = `${API_PREFIX}${route.path}`;
 
-    app[route.method](fullPath, ...middlewares, validate, (req, res, next) => {
+    app[route.method](fullPath, ...middlewares, servidorGuard(route), validate, (req, res, next) => {
       Promise.resolve(controller[methodName](req, res, next)).catch(next);
     });
   });

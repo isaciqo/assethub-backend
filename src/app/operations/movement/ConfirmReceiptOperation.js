@@ -23,7 +23,7 @@ class ConfirmReceiptOperation {
     const worsened = handover.conditions.filter(c => this.movementPolicyService.worsened(delivered[c.asset_id], c.condition));
     if (worsened.length && !handover.has_issue) {
       handover.has_issue = true;
-      handover.issue_description = `Estado de conservação piorou entre a entrega e o recebimento em ${worsened.length} bem(ns)`;
+      handover.issue_description = `Estado de conservação piorou entre o envio e o recebimento em ${worsened.length} bem(ns)`;
     }
     if (handover.has_issue && !handover.issue_description) throw httpError(400, 'Descreva a ocorrência encontrada no recebimento');
 

@@ -32,7 +32,7 @@ class HandoverService {
         stage,
         kind: dataUrl.startsWith('data:application/pdf') ? 'documento' : 'foto',
         actor,
-        description: `${stage === 'entrega' ? 'Entrega' : 'Recebimento'} — anexo ${i + 1}`,
+        description: `${stage === 'entrega' ? 'Envio' : 'Recebimento'} — anexo ${i + 1}`,
       }));
     }
 

@@ -147,7 +147,7 @@ class PdfService {
 
     header(
       doc,
-      isFinal ? 'Termo de Entrega e Recebimento de Bens' : 'Espelho de Movimentação Patrimonial',
+      isFinal ? 'Termo de Envio e Recebimento de Bens' : 'Espelho de Movimentação Patrimonial',
       `${movement.number} · ${movement.typeLabel} · Situação: ${LABELS.status[movement.status] || movement.status}`,
     );
 
@@ -170,7 +170,7 @@ class PdfService {
     table(doc, [
       { key: 'code', header: 'TOMBAMENTO', weight: 1.1 },
       { key: 'description', header: 'DESCRIÇÃO', weight: 3 },
-      { key: 'delivery', header: 'NA ENTREGA', weight: 1 },
+      { key: 'delivery', header: 'NO ENVIO', weight: 1 },
       { key: 'receipt', header: 'NO RECEBIMENTO', weight: 1.2 },
     ], assets.map(a => ({
       code: a.code,
@@ -204,9 +204,9 @@ class PdfService {
       })));
     }
 
-    sectionTitle(doc, 'Entrega e recebimento');
+    sectionTitle(doc, 'Envio e recebimento');
     const sigBox = (title, handover, personId, sig) => {
-      const x = title === 'Entrega' ? 40 : doc.page.width / 2 + 5;
+      const x = title === 'Envio' ? 40 : doc.page.width / 2 + 5;
       const w = doc.page.width / 2 - 45;
       const y = doc.y;
       doc.roundedRect(x, y, w, 128, 6).strokeColor(C.line).lineWidth(1).stroke();
@@ -229,13 +229,13 @@ class PdfService {
     };
     ensureSpace(doc, 140);
     const yBoxes = doc.y;
-    sigBox('Entrega', movement.delivery, movement.deliverer_id, signatures.delivery);
+    sigBox('Envio', movement.delivery, movement.deliverer_id, signatures.delivery);
     doc.y = yBoxes;
     sigBox('Recebimento', movement.receipt, movement.receiver_id, signatures.receipt);
     doc.y = yBoxes + 136;
 
     const notes = [
-      movement.delivery?.notes && `Entrega: ${movement.delivery.notes}`,
+      movement.delivery?.notes && `Envio: ${movement.delivery.notes}`,
       movement.receipt?.notes && `Recebimento: ${movement.receipt.notes}`,
       movement.receipt?.has_issue && `OCORRÊNCIA no recebimento: ${movement.receipt.issue_description}`,
       movement.issue_resolution?.resolved_at && `Ocorrência tratada: ${movement.issue_resolution.note}`,

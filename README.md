@@ -36,6 +36,6 @@ Docker só da API (usa o Mongo da máquina): `docker compose up -d --build`.
 | `services/DiscrepancyDetectionService.js` | Regra pura de divergência (local, unidade, estado, responsável, não cadastrado) |
 | `operations/discrepancy/ResolveDiscrepancyOperation.js` | Única porta que altera o cadastro a partir do inventário — sempre com decisão humana registrada |
 | `services/HashChainService.js` + `MovementEventService.js` | Histórico de movimentação encadeado por SHA-256 |
-| `services/PdfService.js` | Termo de entrega/recebimento e relatório de inventário com QR de verificação |
+| `services/PdfService.js` | Termo de envio/recebimento e relatório de inventário com QR de verificação |
 | `services/ImportParserService.js` | CSV/XLSX com reconhecimento automático de colunas, `;`/`,`, Latin-1, datas e valores pt-BR |
 | `lib/constants.js` | Tipos de movimentação e nº mínimo de aprovações — **configurável, a validar com o TJPA** |

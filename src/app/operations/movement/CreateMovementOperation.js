@@ -46,7 +46,13 @@ class CreateMovementOperation {
     if (found.length !== new Set(people).size) throw httpError(404, 'Algum participante informado não foi encontrado');
 
     const movement_id = uuidv4();
-    const autoApproved = approverIds.length === 0;
+    // Gerente que pede e se indica como aprovador já gerou a necessidade: a
+    // aprovação dele vale na hora, sem uma etapa extra para ele mesmo clicar.
+    const selfApproves = this.movementPolicyService.isManager(actor) && approverIds.includes(actor.user_id);
+    const approvals = approverIds.map(user_id => (selfApproves && user_id === actor.user_id
+      ? { user_id, status: 'aprovada', note: 'Aprovada por quem solicitou', decided_at: new Date(), decided_by: actor.user_id }
+      : { user_id }));
+    const autoApproved = approvals.every(a => a.status === 'aprovada');
     const movement = await this.movementRepository.create({
       movement_id,
       number: await this.numberingService.next('MOV'),
@@ -64,7 +70,7 @@ class CreateMovementOperation {
         responsible_name: data.destination.responsible_name || '',
       },
       requested_by: actor.user_id,
-      approvals: approverIds.map(user_id => ({ user_id })),
+      approvals,
       deliverer_id: data.deliverer_id,
       receiver_id: data.receiver_id,
       carrier: {
@@ -92,9 +98,9 @@ class CreateMovementOperation {
       await this.movementEventService.append({
         movement_id,
         event_type: 'aprovada',
-        summary: 'Aprovada automaticamente — tipo sem exigência de aprovação',
+        summary: selfApproves ? 'Aprovada por quem solicitou (gestor)' : 'Aprovada automaticamente — tipo sem exigência de aprovação',
         actor,
-        acted_as: 'sistema',
+        acted_as: selfApproves ? 'aprovador' : 'sistema',
       });
     }
 

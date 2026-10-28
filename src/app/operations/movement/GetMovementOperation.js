@@ -22,6 +22,9 @@ class GetMovementOperation {
   async execute({ actor, movement_id }) {
     const movement = await this.movementRepository.findById(movement_id);
     if (!movement) throw httpError(404, 'Movimentação não encontrada');
+    if (actor.role === 'servidor' && ![movement.deliverer_id, movement.receiver_id].includes(actor.user_id)) {
+      throw httpError(403, 'Você não participa desta movimentação');
+    }
 
     const userIds = [movement.requested_by, movement.deliverer_id, movement.receiver_id, ...movement.approvals.map(a => a.user_id)];
     const [events, assets, units, users, evidences] = await Promise.all([

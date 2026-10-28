@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 
 const discrepancySchema = new mongoose.Schema({
   discrepancy_id: { type: String, required: true, unique: true },
-  inventory_id: { type: String, required: true },
+  // inventario: achada na conferência · validacao: a pessoa disse que o bem não está com ela.
+  source: { type: String, enum: ['inventario', 'validacao'], default: 'inventario' },
+  inventory_id: { type: String, default: null },
+  possession_check_id: { type: String, default: null },
   unit_id: { type: String, required: true },
   asset_id: { type: String, default: null },
   asset_code: { type: String, required: true },

@@ -34,13 +34,13 @@ class MovementPolicyService {
         throw httpError(403, 'Você não é aprovador(a) pendente desta movimentação');
       }
       case 'deliver': {
-        if (movement.status !== 'aprovada') throw httpError(409, 'A entrega só pode ser registrada depois das aprovações');
+        if (movement.status !== 'aprovada') throw httpError(409, 'O envio só pode ser registrado depois das aprovações');
         if (movement.deliverer_id === actor.user_id) return as('entregador');
         if (admin) return as('admin');
-        throw httpError(403, 'Somente a pessoa designada para a entrega pode confirmá-la');
+        throw httpError(403, 'Somente a pessoa designada para o envio pode confirmá-lo');
       }
       case 'receive': {
-        if (movement.status !== 'em_transito') throw httpError(409, 'O recebimento só pode ser registrado depois da entrega');
+        if (movement.status !== 'em_transito') throw httpError(409, 'O recebimento só pode ser registrado depois do envio');
         if (movement.receiver_id === actor.user_id) return as('recebedor');
         if (admin) return as('admin');
         throw httpError(403, 'Somente a pessoa designada para o recebimento pode confirmá-lo');
@@ -51,7 +51,7 @@ class MovementPolicyService {
         throw httpError(403, 'Somente gestores de patrimônio tratam ocorrências');
       }
       case 'cancel': {
-        if (!['aguardando_aprovacao', 'aprovada'].includes(movement.status)) throw httpError(409, 'Só é possível cancelar antes da entrega');
+        if (!['aguardando_aprovacao', 'aprovada'].includes(movement.status)) throw httpError(409, 'Só é possível cancelar antes do envio');
         if (movement.requested_by === actor.user_id) return as('solicitante');
         if (this.isManager(actor)) return as(actor.role);
         throw httpError(403, 'Somente quem solicitou ou um gestor pode cancelar');

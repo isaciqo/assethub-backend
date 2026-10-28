@@ -32,7 +32,7 @@ class ConfirmDeliveryOperation {
     await this.movementEventService.append({
       movement_id,
       event_type: 'entrega',
-      summary: `Entrega confirmada e assinada por ${handover.signer_name}`,
+      summary: `Envio confirmado e assinado por ${handover.signer_name}`,
       actor,
       acted_as: actedAs,
       // Hashes das evidências entram na cadeia: trocar a foto depois quebra a verificação.
@@ -41,7 +41,7 @@ class ConfirmDeliveryOperation {
     await this.assetEventService.recordMany(movement.asset_ids.map(asset_id => ({
       asset_id,
       event_type: 'movimentacao_entrega',
-      summary: `Entregue para transporte/recebimento (${movement.number})`,
+      summary: `Enviado para transporte/recebimento (${movement.number})`,
       actor,
       reference_type: 'movement',
       reference_id: movement_id,
