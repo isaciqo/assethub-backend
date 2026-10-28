@@ -1,6 +1,8 @@
 const logger = require('../../../lib/logger');
 
-const SKIP_PATHS = ['/api-docs', '/favicon.ico'];
+// /health: o self-ping bate a cada 60 s — 1.440 linhas/dia de ruído. Falhas do
+// ping são logadas pelo próprio keep-alive (app.js).
+const SKIP_PATHS = ['/api-docs', '/favicon.ico', '/health'];
 
 function requestLogger(req, res, next) {
   const start = Date.now();

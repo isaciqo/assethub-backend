@@ -55,8 +55,11 @@ Prédio-Sede e as 5 contas de teste (senha `Patrimonio@2026`).
 
 ## Cuidados para o dia da apresentação
 
-- **O Render gratuito dorme** após 15 min sem uso; a primeira chamada leva ~1 min. Abra o app uns
-  2 minutos antes do pitch (ou use um plano pago no dia).
+- **Keep-alive**: o Render gratuito dorme o serviço após 15 min sem tráfego. A API se pinga pela URL
+  pública (`RENDER_EXTERNAL_URL`, injetada pelo Render) a cada 60 s — mesmo esquema do MEDagenda —, então
+  fica sempre acordada. Em outro provedor, defina `SELF_PING_URL` com a URL pública da API.
+  Atenção: o plano gratuito tem **750 h/mês por conta**; dois serviços gratuitos sempre ligados na mesma
+  conta (~1.490 h) estouram o limite antes do fim do mês.
 - **Abra o link no Chrome/Safari**, não dentro do WhatsApp/Instagram — esses navegadores embutidos
   costumam bloquear câmera e GPS.
 - Na primeira vez o navegador pergunta **"Permitir câmera?"** e **"Permitir localização?"** — toque em Permitir.

@@ -93,6 +93,31 @@ connectDatabase()
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Swagger docs: http://localhost:${PORT}/api-docs`);
     });
+
+    // Keep-alive (mesmo esquema do MEDagenda): o Render gratuito dorme o serviço
+    // depois de ~15 min sem tráfego HTTP público. Um ping pra localhost não conta —
+    // precisa bater na URL pública, atravessando o proxy do Render. RENDER_EXTERNAL_URL
+    // é injetada automaticamente pelo Render; SELF_PING_URL é o jeito manual em outro
+    // provedor. Sem nenhuma das duas (dev local/Docker) fica desligado.
+    const selfPingUrl = process.env.SELF_PING_URL || process.env.RENDER_EXTERNAL_URL;
+    if (selfPingUrl) {
+      let consecutiveFailures = 0;
+      setInterval(() => {
+        fetch(`${selfPingUrl}/health`)
+          .then(() => { consecutiveFailures = 0; })
+          .catch((err) => {
+            consecutiveFailures += 1;
+            // Só loga a partir da 2ª falha seguida — uma requisição perdida
+            // (rede instável, deploy em andamento) não é problema.
+            if (consecutiveFailures >= 2) {
+              logger.error('Self-ping: falha ao pingar /health', { message: err.message, consecutiveFailures });
+            }
+          });
+      }, 60_000);
+      logger.info(`Self-ping ativo: ${selfPingUrl}/health a cada 60s`);
+    } else {
+      logger.info('Self-ping desativado — SELF_PING_URL/RENDER_EXTERNAL_URL não configurada');
+    }
   })
   .catch((err) => {
     logger.error('Failed to start', { message: err.message, stack: err.stack });
