@@ -1,0 +1,37 @@
+{
+  "name": "assethub-backend",
+  "version": "1.0.0",
+  "description": "Patrimônio Ágil — API de inventário patrimonial digital (Hackathon TJPA, Desafio 2)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "seed": "node scripts/seed.js",
+    "seed:reset": "node scripts/seed.js --reset",
+    "seed:demo": "node scripts/seed.js --reset --demo"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "awilix": "^10.0.2",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "csv-parse": "^5.6.0",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0",
+    "multer": "^2.0.2",
+    "pdfkit": "^0.15.2",
+    "qrcode": "^1.5.4",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

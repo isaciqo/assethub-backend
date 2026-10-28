@@ -1,0 +1,37 @@
+# Sobe só a API. Por padrão usa o Mongo que JÁ roda na máquina (porta 27017,
+# o mesmo do MEDagenda — banco separado "assethub").
+#
+#   docker compose up -d --build                     → API + Mongo da máquina
+#   docker compose --profile mongo up -d --build     → API + Mongo próprio
+#     (com o profile, defina MONGODB_URI=mongodb://mongo:27017/assethub)
+#
+# Para subir front + back juntos, use o docker-compose.yml da pasta acima.
+services:
+  api:
+    build: .
+    container_name: assethub_api
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017/assethub}
+      - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-true}
+      - SEED_ON_START=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: assethub_mongo
+    profiles: ["mongo"]
+    ports:
+      - "27018:27017"
+    volumes:
+      - assethub_mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  assethub_mongo_data:
