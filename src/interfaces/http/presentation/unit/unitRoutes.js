@@ -21,4 +21,19 @@ module.exports = [
     },
     swagger: doc('Units', 'Cria unidade'),
   },
+  {
+    method: 'patch',
+    path: '/units/:unit_id/location',
+    handler: 'unitController.setLocation',
+    middlewares: [authMiddleware, requireRole('admin', 'gestor')],
+    validation: {
+      params: Joi.object({ unit_id: Joi.string().required() }),
+      body: Joi.object({
+        lat: Joi.number().min(-90).max(90).required(),
+        lng: Joi.number().min(-180).max(180).required(),
+        accuracy: Joi.number().min(0).allow(null).optional(),
+      }),
+    },
+    swagger: doc('Units', 'Fixa a posição atual como ponto de referência da unidade'),
+  },
 ];

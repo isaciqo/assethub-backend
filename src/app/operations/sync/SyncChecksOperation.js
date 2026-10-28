@@ -15,7 +15,7 @@ const isDuplicateKey = err => err && (err.code === 11000 || err.code === 11001);
 class SyncChecksOperation {
   constructor({
     inventoryRepository, inventoryCheckRepository, assetRepository, discrepancyRepository,
-    unitRepository, discrepancyDetectionService, evidenceService, assetEventService,
+    unitRepository, discrepancyDetectionService, evidenceService, assetEventService, geoService,
   }) {
     this.inventoryRepository = inventoryRepository;
     this.inventoryCheckRepository = inventoryCheckRepository;
@@ -25,6 +25,7 @@ class SyncChecksOperation {
     this.discrepancyDetectionService = discrepancyDetectionService;
     this.evidenceService = evidenceService;
     this.assetEventService = assetEventService;
+    this.geoService = geoService;
   }
 
   async execute({ actor, operations }) {
@@ -49,6 +50,12 @@ class SyncChecksOperation {
   async loadInventory(inventory_id, cache) {
     if (!cache.has(inventory_id)) cache.set(inventory_id, await this.inventoryRepository.findById(inventory_id));
     return cache.get(inventory_id);
+  }
+
+  async loadUnit(unit_id, cache) {
+    const key = `unit:${unit_id}`;
+    if (!cache.has(key)) cache.set(key, await this.unitRepository.findById(unit_id));
+    return cache.get(key);
   }
 
   async applyOne(actor, op, inventories) {
@@ -98,6 +105,7 @@ class SyncChecksOperation {
       checked_at: checkedAt,
       synced_at: now,
       was_offline: !!op.was_offline,
+      geo: this.geoService.assess(op.geo, await this.loadUnit(inventory.unit_id, inventories)),
     };
 
     let result = 'applied';

@@ -28,6 +28,9 @@ npm run dev             # http://localhost:3000 · Swagger em /api-docs
 
 Docker só da API (usa o Mongo da máquina): `docker compose up -d --build`.
 
+**Produção (Render + MongoDB Atlas):** `render.yaml` + passo a passo em [DEPLOY.md](DEPLOY.md).
+`SWAGGER_ENABLED=false` esconde a documentação da API.
+
 ## Peças centrais
 
 | Arquivo | Papel |

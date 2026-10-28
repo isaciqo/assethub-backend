@@ -3,8 +3,10 @@ const httpError = require('../../lib/httpError');
 // Monta o registro de entrega/recebimento: grava assinatura e fotos como
 // evidências e devolve o bloco pronto para salvar na movimentação.
 class HandoverService {
-  constructor({ evidenceService }) {
+  constructor({ evidenceService, unitRepository, geoService }) {
     this.evidenceService = evidenceService;
+    this.unitRepository = unitRepository;
+    this.geoService = geoService;
   }
 
   async build({ actor, movement, stage, input }) {
@@ -20,7 +22,7 @@ class HandoverService {
       stage,
       kind: 'assinatura',
       actor,
-      description: `Assinatura de ${input.signer_name || actor.name} na ${stage}`,
+      description: `Assinatura de ${input.signer_name || actor.name} ${stage === 'entrega' ? 'no envio' : 'no recebimento'}`,
     });
 
     const photos = [];
@@ -36,6 +38,9 @@ class HandoverService {
       }));
     }
 
+    // Envio é comparado com a unidade de origem; recebimento, com a de destino.
+    const unit = await this.unitRepository.findById(stage === 'entrega' ? movement.origin.unit_id : movement.destination.unit_id);
+
     return {
       handover: {
         at: new Date(),
@@ -48,6 +53,7 @@ class HandoverService {
         photo_evidence_ids: photos.map(p => p.evidence_id),
         has_issue: !!input.has_issue,
         issue_description: input.issue_description || '',
+        geo: this.geoService.assess(input.geo, unit),
       },
       evidenceHashes: { signature: signature.sha256, photos: photos.map(p => p.sha256) },
     };

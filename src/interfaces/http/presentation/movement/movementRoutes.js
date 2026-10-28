@@ -5,6 +5,11 @@ const { MOVEMENT_TYPES, MOVEMENT_STATUS, CONSERVATION_STATUS } = require('../../
 
 const byId = Joi.object({ movement_id: Joi.string().required() });
 const dataUrl = Joi.string().max(7 * 1024 * 1024);
+const geo = Joi.object({
+  lat: Joi.number().min(-90).max(90).required(),
+  lng: Joi.number().min(-180).max(180).required(),
+  accuracy: Joi.number().min(0).allow(null).optional(),
+});
 
 const handover = {
   conditions: Joi.array().items(Joi.object({
@@ -15,6 +20,7 @@ const handover = {
   signature: dataUrl.required(),
   signer_name: Joi.string().allow('').max(120).optional(),
   photos: Joi.array().items(dataUrl).max(6).optional(),
+  geo: geo.allow(null).optional(),
 };
 
 const carrier = Joi.object({

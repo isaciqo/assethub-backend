@@ -15,6 +15,11 @@ function formatUser(u) {
   };
 }
 
+function formatGeo(g) {
+  if (!g || g.lat == null) return null;
+  return { lat: g.lat, lng: g.lng, accuracy: g.accuracy ?? null, distanceM: g.distance_m ?? null, outsideUnit: !!g.outside_unit };
+}
+
 function formatUnit(u) {
   if (!u) return null;
   return {
@@ -24,6 +29,7 @@ function formatUnit(u) {
     city: u.city || '',
     region: u.region,
     locations: [...(u.locations || [])].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    geo: u.geo?.lat != null ? { lat: u.geo.lat, lng: u.geo.lng } : null,
   };
 }
 
@@ -106,6 +112,7 @@ function formatCheck(c) {
     checkedAt: iso(c.checked_at),
     syncedAt: iso(c.synced_at),
     wasOffline: !!c.was_offline,
+    geo: formatGeo(c.geo),
   };
 }
 
@@ -147,6 +154,7 @@ function formatHandover(h) {
     photoEvidenceIds: h.photo_evidence_ids || [],
     hasIssue: !!h.has_issue,
     issueDescription: h.issue_description || '',
+    geo: formatGeo(h.geo),
   };
 }
 

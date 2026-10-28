@@ -1,0 +1,39 @@
+# Render Blueprint — API do Patrimônio Ágil.
+# Render → New → Blueprint → aponte para este repositório.
+# Os valores marcados com `sync: false` são pedidos na criação (ver DEPLOY.md).
+services:
+  - type: web
+    name: assethub-api
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      # MongoDB Atlas: mongodb+srv://USUARIO:SENHA@CLUSTER.mongodb.net/assethub?retryWrites=true&w=majority
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 2h
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      # Domínio do front na Vercel (sistema fechado: só ele passa no CORS).
+      # Ex.: https://assethub.vercel.app
+      - key: FRONTEND_URL
+        sync: false
+      # Mesmo domínio — vai no QR Code de verificação do termo em PDF.
+      - key: PUBLIC_APP_URL
+        sync: false
+      # Banco vazio na primeira subida → cria o Prédio-Sede e as 5 contas de teste.
+      - key: SEED_ON_START
+        value: "true"
+      - key: SWAGGER_ENABLED
+        value: "false"

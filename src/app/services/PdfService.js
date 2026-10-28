@@ -234,7 +234,14 @@ class PdfService {
     sigBox('Recebimento', movement.receipt, movement.receiver_id, signatures.receipt);
     doc.y = yBoxes + 136;
 
+    const where = (label, g) => {
+      if (!g || g.lat == null) return null;
+      const dist = g.distance_m != null ? ` · ${g.distance_m} m do ponto da unidade${g.outside_unit ? ' — FORA DA UNIDADE' : ''}` : '';
+      return `${label} confirmado em ${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}${g.accuracy ? ` (±${g.accuracy} m)` : ''}${dist}`;
+    };
     const notes = [
+      where('Envio', movement.delivery?.geo),
+      where('Recebimento', movement.receipt?.geo),
       movement.delivery?.notes && `Envio: ${movement.delivery.notes}`,
       movement.receipt?.notes && `Recebimento: ${movement.receipt.notes}`,
       movement.receipt?.has_issue && `OCORRÊNCIA no recebimento: ${movement.receipt.issue_description}`,

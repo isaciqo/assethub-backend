@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 const { CHECK_STATUS, CHECK_METHODS, CONSERVATION_STATUS } = require('../../../lib/constants');
 
+const geoSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number,
+  accuracy: { type: Number, default: null },
+  distance_m: { type: Number, default: null },
+  outside_unit: { type: Boolean, default: false },
+}, { _id: false });
+
 const inventoryCheckSchema = new mongoose.Schema({
   check_id: { type: String, required: true, unique: true },
   // UUID gerado NO DISPOSITIVO. É a chave de idempotência da sincronização:
@@ -29,6 +37,8 @@ const inventoryCheckSchema = new mongoose.Schema({
   checked_at: { type: Date, required: true },
   synced_at: { type: Date, default: Date.now },
   was_offline: { type: Boolean, default: false },
+  // Onde o aparelho estava no momento da leitura (null se a pessoa negou o GPS).
+  geo: { type: geoSchema, default: null },
 }, { timestamps: true });
 
 inventoryCheckSchema.index(

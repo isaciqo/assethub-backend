@@ -15,11 +15,19 @@ const approvalSchema = new mongoose.Schema({
   decided_by: { type: String, default: null },
 }, { _id: false });
 
+const geoSchema = new mongoose.Schema({
+  lat: Number,
+  lng: Number,
+  accuracy: { type: Number, default: null },
+  distance_m: { type: Number, default: null },
+  outside_unit: { type: Boolean, default: false },
+}, { _id: false });
+
 const handoverSchema = new mongoose.Schema({
   at: { type: Date, default: null },
   by: { type: String, default: null },
   by_name: { type: String, default: '' },
-  // Condição de cada bem no momento da entrega/recebimento.
+  // Condição de cada bem no momento do envio/recebimento.
   conditions: [{ _id: false, asset_id: String, condition: { type: String, enum: CONSERVATION_STATUS } }],
   notes: { type: String, default: '' },
   signature_evidence_id: { type: String, default: null },
@@ -27,6 +35,7 @@ const handoverSchema = new mongoose.Schema({
   photo_evidence_ids: { type: [String], default: [] },
   has_issue: { type: Boolean, default: false },
   issue_description: { type: String, default: '' },
+  geo: { type: geoSchema, default: null },
 }, { _id: false });
 
 const movementSchema = new mongoose.Schema({

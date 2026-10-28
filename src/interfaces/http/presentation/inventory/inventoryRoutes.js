@@ -5,6 +5,11 @@ const doc = require('../shared/doc');
 const { CONSERVATION_STATUS, CHECK_METHODS, INVENTORY_STATUS } = require('../../../../lib/constants');
 
 const byId = Joi.object({ inventory_id: Joi.string().required() });
+const geo = Joi.object({
+  lat: Joi.number().min(-90).max(90).required(),
+  lng: Joi.number().min(-180).max(180).required(),
+  accuracy: Joi.number().min(0).allow(null).optional(),
+});
 
 // Uma operação de conferência como sai do aparelho. A foto vem embutida (data
 // URL comprimida no próprio app) para que a fila offline seja um JSON só.
@@ -24,6 +29,7 @@ const operation = Joi.object({
   checked_at: Joi.date().iso().required(),
   device_id: Joi.string().allow('').max(80).optional(),
   was_offline: Joi.boolean().optional(),
+  geo: geo.allow(null).optional(),
 });
 
 module.exports = [

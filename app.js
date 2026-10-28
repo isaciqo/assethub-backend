@@ -77,7 +77,8 @@ app.use('/api/v1', globalApiLimiter);
 app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/v1/public/', publicLimiter);
 
-setupSwagger(app);
+// Sistema fechado: em produção dá para esconder a documentação da API.
+if (process.env.SWAGGER_ENABLED !== 'false') setupSwagger(app);
 routerRegister(app, container);
 app.use(errorHandler);
 
