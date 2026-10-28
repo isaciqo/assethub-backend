@@ -11,11 +11,16 @@ Sistema fechado: sem cadastro público, CORS só para o domínio da Vercel e Swa
 
 ## 1. Banco — MongoDB Atlas (gratuito)
 
+**Já tem um cluster (ex.: o do MEDagenda)?** Use o **mesmo link**. A API sempre grava no banco
+`assethub` (variável `MONGODB_DB_NAME`), seja qual for o nome que vier no link, então não mistura com
+os dados do outro sistema. Se o banco escolhido tiver usuários de outro sistema, a API para sem alterar nada.
+
+Cluster novo:
 1. Crie um cluster **M0** em <https://cloud.mongodb.com>.
 2. **Database Access** → crie um usuário com senha.
 3. **Network Access** → `0.0.0.0/0` (o Render gratuito não tem IP fixo).
-4. **Connect → Drivers** → copie a URI e acrescente o nome do banco:
-   `mongodb+srv://USUARIO:SENHA@CLUSTER.mongodb.net/assethub?retryWrites=true&w=majority`
+4. **Connect → Drivers** → copie a URI:
+   `mongodb+srv://USUARIO:SENHA@CLUSTER.mongodb.net/?retryWrites=true&w=majority`
 
 ## 2. API — Render
 
@@ -24,7 +29,8 @@ Sistema fechado: sem cadastro público, CORS só para o domínio da Vercel e Swa
 
 | Variável | Valor |
 |---|---|
-| `MONGODB_URI` | a URI do Atlas (passo 1) |
+| `MONGODB_URI` | a URI do Atlas (passo 1) — pode ser a mesma do MEDagenda |
+| `MONGODB_DB_NAME` | `assethub` (já vem no `render.yaml`) |
 | `FRONTEND_URL` | domínio da Vercel, ex.: `https://assethub.vercel.app` (sem barra no fim) |
 | `PUBLIC_APP_URL` | o mesmo domínio (vai no QR do termo em PDF) |
 

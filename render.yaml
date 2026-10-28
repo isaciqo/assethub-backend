@@ -14,9 +14,12 @@ services:
         value: production
       - key: PORT
         value: "3000"
-      # MongoDB Atlas: mongodb+srv://USUARIO:SENHA@CLUSTER.mongodb.net/assethub?retryWrites=true&w=majority
+      # Link do cluster Atlas — pode ser o mesmo do MEDagenda: o nome do banco
+      # vem de MONGODB_DB_NAME, não do link, então os dados não se misturam.
       - key: MONGODB_URI
         sync: false
+      - key: MONGODB_DB_NAME
+        value: assethub
       - key: JWT_ACCESS_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
