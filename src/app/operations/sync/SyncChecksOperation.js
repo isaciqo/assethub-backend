@@ -168,6 +168,14 @@ class SyncChecksOperation {
       observed: d.observed,
     })));
 
+    // Bem que existe na base mas não estava na lista prevista (lista velha no
+    // aparelho, bem chegado depois da abertura…): entra no inventário e conta
+    // como conferido.
+    if (asset && !(inventory.expected_asset_ids || []).includes(asset.asset_id)) {
+      const updated = await this.inventoryRepository.update(inventory.inventory_id, { $addToSet: { expected_asset_ids: asset.asset_id } });
+      if (updated) inventories.set(inventory.inventory_id, updated);
+    }
+
     if (asset && result === 'applied') {
       await this.assetRepository.update(asset.asset_id, { last_checked_at: checkedAt });
       await this.assetEventService.record({
