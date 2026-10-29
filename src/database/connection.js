@@ -11,7 +11,7 @@ mongoose.set('autoIndex', false);
 const DB_NAME = process.env.MONGODB_DB_NAME || 'assethub';
 
 // Trava contra MONGODB_URI apontando para o banco de outro sistema: usuários
-// do Patrimônio Ágil sempre têm user_id. Se houver usuário sem ele, não toca
+// do Erekoara sempre têm user_id. Se houver usuário sem ele, não toca
 // em nada e para.
 async function assertOwnDatabase() {
   const foreign = await mongoose.connection.db.collection('users').findOne({ user_id: { $exists: false } }, { projection: { _id: 1 } });

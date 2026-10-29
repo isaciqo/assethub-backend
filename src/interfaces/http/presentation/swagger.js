@@ -25,7 +25,7 @@ const buildSwaggerSpec = () => {
   return {
     openapi: '3.0.0',
     info: {
-      title: 'Patrimônio Ágil API',
+      title: 'Erekoara API',
       version: '1.0.0',
       description: 'Inventário patrimonial digital — Hackathon TJPA, Desafio 2. Todos os dados são sintéticos.',
     },

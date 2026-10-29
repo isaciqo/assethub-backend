@@ -1,4 +1,4 @@
-# Patrimônio Ágil — API
+# Erekoara — API
 
 Node.js + Express + MongoDB, com a mesma arquitetura hexagonal do MEDagenda.
 

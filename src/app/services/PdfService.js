@@ -53,7 +53,7 @@ function header(doc, title, subtitle) {
   const W = doc.page.width;
   band(doc, 0, W);
   doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(9)
-    .text('TRIBUNAL DE JUSTIÇA DO ESTADO DO PARÁ · PATRIMÔNIO ÁGIL', 40, 32, { characterSpacing: 1 });
+    .text('TRIBUNAL DE JUSTIÇA DO ESTADO DO PARÁ · EREKOARA', 40, 32, { characterSpacing: 1 });
   doc.fillColor(C.clay).font('Helvetica-Bold').fontSize(16).text(title, 40, 48);
   if (subtitle) doc.fillColor(C.muted).font('Helvetica').fontSize(9).text(subtitle, 40, 70);
   doc.moveTo(40, 86).lineTo(W - 40, 86).strokeColor(C.line).lineWidth(1).stroke();
@@ -331,7 +331,7 @@ class PdfService {
       ], discrepancies);
     }
 
-    footer(doc, `Gerado em ${fmtDate(new Date())} pelo Patrimônio Ágil.`);
+    footer(doc, `Gerado em ${fmtDate(new Date())} pelo Erekoara.`);
     doc.end();
     return done;
   }
@@ -370,7 +370,7 @@ class PdfService {
       ['Data da decisão', fmtDate(request.updatedAt)],
     ]);
 
-    footer(doc, 'A compra é conduzida fora do Patrimônio Ágil, pelo setor competente.');
+    footer(doc, 'A compra é conduzida fora do Erekoara, pelo setor competente.');
     doc.end();
     return done;
   }

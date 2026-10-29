@@ -17,7 +17,7 @@ class ExportService {
   }
 
   // sheets: [{ name, columns, rows }]
-  async toXlsx(sheets, { title = 'Patrimônio Ágil' } = {}) {
+  async toXlsx(sheets, { title = 'Erekoara' } = {}) {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = title;
     workbook.created = new Date();

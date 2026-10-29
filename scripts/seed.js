@@ -286,7 +286,7 @@ if (require.main === module) {
   (async () => {
     const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/assethub';
     await mongoose.connect(uri, { dbName: DB_NAME });
-    // Antes de apagar qualquer coisa: o banco é mesmo do Patrimônio Ágil?
+    // Antes de apagar qualquer coisa: o banco é mesmo do Erekoara?
     await assertOwnDatabase();
     if (process.argv.includes('--reset')) {
       await mongoose.connection.dropDatabase();

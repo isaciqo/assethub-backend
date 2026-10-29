@@ -1,4 +1,4 @@
-# Render Blueprint — API do Patrimônio Ágil.
+# Render Blueprint — API do Erekoara.
 # Render → New → Blueprint → aponte para este repositório.
 # Os valores marcados com `sync: false` são pedidos na criação (ver DEPLOY.md).
 services:

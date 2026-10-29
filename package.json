@@ -1,7 +1,7 @@
 {
   "name": "assethub-backend",
   "version": "1.0.0",
-  "description": "Patrimônio Ágil — API de inventário patrimonial digital (Hackathon TJPA, Desafio 2)",
+  "description": "Erekoara — API de inventário patrimonial digital (Hackathon TJPA, Desafio 2)",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
