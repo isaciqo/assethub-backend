@@ -6,7 +6,7 @@ const { EVIDENCE_KINDS } = require('../../../lib/constants');
 // — o resto do sistema só conhece evidence_id.
 const evidenceSchema = new mongoose.Schema({
   evidence_id: { type: String, required: true, unique: true },
-  owner_type: { type: String, enum: ['movement', 'check', 'asset'], required: true },
+  owner_type: { type: String, enum: ['movement', 'check', 'asset', 'request'], required: true },
   owner_id: { type: String, required: true },
   stage: { type: String, default: '' },
   kind: { type: String, enum: EVIDENCE_KINDS, required: true },

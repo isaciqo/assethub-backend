@@ -1,6 +1,8 @@
 // Formato público das entidades na API. Nunca expõe _id, __v, senha nem o
 // binário das evidências; datas saem como ISO.
 
+const { sectorKind } = require('./sectors');
+
 const iso = d => (d ? new Date(d).toISOString() : null);
 
 function formatUser(u) {
@@ -27,8 +29,12 @@ function formatUnit(u) {
     name: u.name,
     code: u.code,
     city: u.city || '',
+    kind: u.kind || (u.code === 'SEDE' ? 'sede' : 'comarca'),
     region: u.region,
     locations: [...(u.locations || [])].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    sectors: [...(u.locations || [])]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+      .map(name => ({ name, kind: sectorKind(name) })),
     geo: u.geo?.lat != null ? { lat: u.geo.lat, lng: u.geo.lng } : null,
   };
 }
@@ -45,6 +51,7 @@ function formatAsset(a) {
     serialNumber: a.serial_number || '',
     unitId: a.unit_id,
     location: a.location || '',
+    room: a.room || '',
     responsibleName: a.responsible_name || '',
     conservationStatus: a.conservation_status,
     status: a.status,
@@ -258,7 +265,36 @@ function formatPossessionCheck(c) {
   };
 }
 
+function formatAssetRequest(r) {
+  if (!r) return null;
+  return {
+    id: r.request_id,
+    number: r.number,
+    requestedBy: r.requested_by,
+    requestedByName: r.requested_by_name || '',
+    unitId: r.unit_id,
+    sector: r.sector || '',
+    room: r.room || '',
+    item: r.item,
+    category: r.category || '',
+    quantity: r.quantity,
+    justification: r.justification,
+    urgency: r.urgency,
+    attachmentId: r.attachment_evidence_id || null,
+    status: r.status,
+    handledBy: r.handled_by || null,
+    handledByName: r.handled_by_name || '',
+    decisionNote: r.decision_note || '',
+    movementIds: r.movement_ids || [],
+    purchaseJustification: r.purchase_justification || '',
+    history: (r.history || []).map(h => ({ at: iso(h.at), by: h.by, byName: h.by_name || '', action: h.action, note: h.note || '' })),
+    createdAt: iso(r.createdAt),
+    updatedAt: iso(r.updatedAt),
+  };
+}
+
 module.exports = {
+  formatAssetRequest,
   formatPossessionCheck,
   iso,
   formatUser,

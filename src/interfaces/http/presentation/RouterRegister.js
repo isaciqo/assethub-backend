@@ -7,6 +7,7 @@ const discrepancyRoutes = require('./discrepancy/discrepancyRoutes');
 const movementRoutes = require('./movement/movementRoutes');
 const metaRoutes = require('./meta/metaRoutes');
 const possessionRoutes = require('./possession/possessionRoutes');
+const requestRoutes = require('./request/requestRoutes');
 const validationMiddleware = require('../middlewares/validationMiddleware');
 
 const API_PREFIX = '/api/v1';
@@ -21,6 +22,7 @@ const ALL_ROUTES = [
   ...movementRoutes,
   ...metaRoutes,
   ...possessionRoutes,
+  ...requestRoutes,
 ];
 
 // O perfil servidor só alcança as rotas marcadas com `servidor: true` — o

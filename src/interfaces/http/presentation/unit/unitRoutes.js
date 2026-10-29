@@ -15,6 +15,7 @@ module.exports = [
         name: Joi.string().min(2).required(),
         code: Joi.string().min(2).max(12).required(),
         city: Joi.string().allow('').optional(),
+        kind: Joi.string().valid('sede', 'comarca').optional(),
         region: Joi.string().valid('capital', 'interior').optional(),
         locations: Joi.array().items(Joi.string()).optional(),
       }),

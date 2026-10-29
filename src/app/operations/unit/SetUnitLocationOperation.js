@@ -12,7 +12,7 @@ class SetUnitLocationOperation {
 
   async execute({ actor, unit_id, geo }) {
     const unit = await this.unitRepository.findById(unit_id);
-    if (!unit) throw httpError(404, 'Unidade não encontrada');
+    if (!unit) throw httpError(404, 'Comarca não encontrada');
     const clean = this.geoService.clean(geo);
     if (!clean) throw httpError(400, 'Localização inválida');
 

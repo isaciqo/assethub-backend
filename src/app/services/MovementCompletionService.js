@@ -1,11 +1,35 @@
 // Efeito de uma movimentação concluída (ou desfeita) sobre o cadastro dos bens.
 // Usado pelo recebimento sem ocorrência e pelo tratamento de ocorrência.
 class MovementCompletionService {
-  constructor({ assetRepository, movementRepository, unitRepository, assetEventService }) {
+  constructor({ assetRepository, movementRepository, unitRepository, assetEventService, assetRequestRepository }) {
     this.assetRepository = assetRepository;
     this.movementRepository = movementRepository;
     this.unitRepository = unitRepository;
     this.assetEventService = assetEventService;
+    this.assetRequestRepository = assetRequestRepository;
+  }
+
+  // Movimentação que atende uma solicitação de bem: quando todas as do pedido
+  // concluem, ele vira "atendida"; se uma é cancelada/rejeitada/desfeita, ele
+  // volta para análise, para o gestor escolher outro bem ou outra saída.
+  async syncRequest(movement, outcome) {
+    const request = await this.assetRequestRepository.findByMovement(movement.movement_id);
+    if (!request || request.status !== 'em_atendimento') return;
+    const entry = action => ({ at: new Date(), by: 'sistema', by_name: 'Sistema', action, note: `Movimentação ${movement.number}` });
+    if (outcome === 'released') {
+      await this.assetRequestRepository.update(request.request_id, {
+        status: 'em_analise',
+        $pull: { movement_ids: movement.movement_id },
+        $push: { history: entry('movimentacao_encerrada') },
+      });
+      return;
+    }
+    const others = await Promise.all(request.movement_ids
+      .filter(id => id !== movement.movement_id)
+      .map(id => this.movementRepository.findById(id)));
+    if (others.every(m => !m || m.status === 'concluida')) {
+      await this.assetRequestRepository.update(request.request_id, { status: 'atendida', $push: { history: entry('atendida') } });
+    }
   }
 
   async complete(movement, actor) {
@@ -17,6 +41,8 @@ class MovementCompletionService {
       const update = {
         unit_id: dest.unit_id,
         location: dest.location || asset.location,
+        // Mudou de setor: a sala antiga não vale mais.
+        room: dest.location && dest.location !== asset.location ? '' : asset.room,
         responsible_name: dest.responsible_name || asset.responsible_name,
         conservation_status: receiptCond[asset.asset_id] || asset.conservation_status,
         status: 'ativo',
@@ -39,7 +65,9 @@ class MovementCompletionService {
     }
     if (dest.location) await this.unitRepository.addLocations(dest.unit_id, [dest.location]);
 
-    return this.movementRepository.update(movement.movement_id, { status: 'concluida', completed_at: new Date() });
+    const saved = await this.movementRepository.update(movement.movement_id, { status: 'concluida', completed_at: new Date() });
+    await this.syncRequest(movement, 'completed');
+    return saved;
   }
 
   async release(movement, actor, reason) {
@@ -52,6 +80,7 @@ class MovementCompletionService {
       reference_type: 'movement',
       reference_id: movement.movement_id,
     })));
+    await this.syncRequest(movement, 'released');
   }
 }
 

@@ -3,7 +3,7 @@
 // reais do TJPA). Também (re)gera as planilhas de exemplo em sample-data/.
 //
 // Dois modos (SEED_MODE ou --demo):
-//   zerado (padrão) → 1 unidade com salas e 5 usuários; nenhum bem, inventário
+//   zerado (padrão) → Sede + Comarca de Marabá com setores e 5 usuários; nenhum bem, inventário
 //                     ou movimentação — os itens são cadastrados pela pessoa.
 //   demo            → 4 unidades, 5 usuários, 190 bens, inventário e movimentações.
 //
@@ -33,43 +33,83 @@ const USERS = [
   { key: 'maraba', name: 'Patrícia Lobato', email: 'maraba@tjpa.demo', role: 'conferente', unit: 'MAB', registration: '125016' },
 ];
 
-// Modo zerado: só o que o sistema precisa para funcionar (local e pessoas).
-const BLANK_UNIT = {
-  name: 'Prédio-Sede do TJPA',
-  code: 'SEDE',
-  city: 'Belém',
-  region: 'capital',
-  rooms: [
-    'Almoxarifado Central',
-    'Coordenadoria de Patrimônio',
-    'Secretaria de Administração',
-    'Secretaria de Informática',
-    'Secretaria de Gestão de Pessoas',
-    'Gabinete da Presidência',
-    'Sala de Reuniões',
-    'Auditório',
-  ],
-};
-
-const BLANK_USERS = [
-  { name: 'Márcia Andrade', email: 'admin@tjpa.demo', role: 'admin', registration: '200101' },
-  { name: 'Roberto Farias', email: 'gerente@tjpa.demo', role: 'gestor', registration: '200102' },
-  { name: 'Lucas Ferreira', email: 'estagiario@tjpa.demo', role: 'conferente', registration: '200103' },
-  { name: 'Paula Menezes', email: 'servidora@tjpa.demo', role: 'servidor', registration: '200104' },
-  { name: 'Diego Santos', email: 'servidor@tjpa.demo', role: 'servidor', registration: '200105' },
+// Modo zerado: só o que o sistema precisa para funcionar (comarcas, setores e
+// pessoas). A estrutura segue a do Tribunal: Comarca → Setor (vara, gabinete,
+// secretaria…) → Sala (opcional, fica no próprio bem).
+const BLANK_UNITS = [
+  {
+    name: 'Prédio-Sede do TJPA',
+    code: 'SEDE',
+    kind: 'sede',
+    city: 'Belém',
+    region: 'capital',
+    sectors: [
+      'Almoxarifado Central',
+      'Coordenadoria de Patrimônio',
+      'Secretaria de Administração',
+      'Secretaria de Informática',
+      'Secretaria de Gestão de Pessoas',
+      'Gabinete da Presidência',
+    ],
+  },
+  {
+    name: 'Comarca de Marabá',
+    code: 'MAB',
+    kind: 'comarca',
+    city: 'Marabá',
+    region: 'interior',
+    sectors: [
+      '1ª Vara Cível',
+      '2ª Vara Cível',
+      'Vara Criminal',
+      'Juizado Especial Cível',
+      'Gabinete do Juiz Diretor do Fórum',
+      'Secretaria do Fórum',
+    ],
+  },
 ];
 
+// Personas em dois blocos (ver tela de login):
+//   Belém    → Roberto abre o inventário e pede o envio; Paula envia, Diego recebe.
+//   Interior → Juliana (1ª Vara Cível de Marabá) pede um bem; o pedido chega ao Roberto.
+const BLANK_USERS = [
+  { name: 'Márcia Andrade', email: 'admin@tjpa.demo', role: 'admin', registration: '200101', unit: 'SEDE' },
+  { name: 'Roberto Farias', email: 'gerente@tjpa.demo', role: 'gestor', registration: '200102', unit: 'SEDE' },
+  { name: 'Lucas Ferreira', email: 'estagiario@tjpa.demo', role: 'conferente', registration: '200103', unit: 'SEDE' },
+  { name: 'Paula Menezes', email: 'servidora@tjpa.demo', role: 'servidor', registration: '200104', unit: 'SEDE' },
+  { name: 'Diego Santos', email: 'servidor@tjpa.demo', role: 'servidor', registration: '200105', unit: 'SEDE' },
+  { name: 'Juliana Costa', email: 'interior@tjpa.demo', role: 'servidor', registration: '200106', unit: 'MAB' },
+];
+
+// Cria o que falta da estrutura zerada (comarcas, setores e personas) sem
+// apagar nada — serve tanto para o banco vazio quanto para um banco que já está
+// no ar e ganhou uma comarca ou uma persona nova.
 async function seedBlank() {
   const c = name => container.resolve(name);
-  const u = BLANK_UNIT;
-  const unit = await c('unitRepository').create({ unit_id: uuidv4(), name: u.name, code: u.code, city: u.city, region: u.region, locations: u.rooms });
-  console.log(`• Unidade ${u.name} com ${u.rooms.length} salas`);
+  const unitRepository = c('unitRepository');
+  const userRepository = c('userRepository');
+
+  const units = {};
+  for (const u of BLANK_UNITS) {
+    let unit = await unitRepository.findByCodeOrName(u.code);
+    if (!unit) {
+      unit = await unitRepository.create({ unit_id: uuidv4(), name: u.name, code: u.code, kind: u.kind, city: u.city, region: u.region, locations: u.sectors });
+      console.log(`• ${u.name} com ${u.sectors.length} setores`);
+    } else {
+      await unitRepository.addLocations(unit.unit_id, u.sectors);
+      if (!unit.kind) await unitRepository.update(unit.unit_id, { kind: u.kind });
+    }
+    units[u.code] = unit;
+  }
 
   const pwd = await c('hashPasswordService').hash(PASSWORD);
+  let created = 0;
   for (const p of BLANK_USERS) {
-    await c('userRepository').create({ user_id: uuidv4(), name: p.name, email: p.email, password: pwd, role: p.role, registration: p.registration, unit_id: unit.unit_id });
+    if (await userRepository.findByEmail(p.email)) continue;
+    await userRepository.create({ user_id: uuidv4(), name: p.name, email: p.email, password: pwd, role: p.role, registration: p.registration, unit_id: units[p.unit].unit_id });
+    created += 1;
   }
-  console.log(`• ${BLANK_USERS.length} usuários (senha: ${PASSWORD}) · nenhum bem cadastrado`);
+  if (created) console.log(`• ${created} usuário(s) criado(s) (senha: ${PASSWORD})`);
 }
 
 function writeSampleFiles() {
@@ -228,6 +268,8 @@ async function seedIfEmpty(mode = process.env.SEED_MODE || 'zerado') {
   const count = await container.resolve('userRepository').count();
   if (count > 0) {
     writeSampleFiles();
+    // Banco já no ar (modo zerado): só completa comarcas/setores/personas novas.
+    if (mode !== 'demo') await seedBlank();
     return false;
   }
   logger.info(`seed: banco vazio — populando (modo ${mode})`);

@@ -1,4 +1,5 @@
 const { formatInventory, formatAssetEvent } = require('../../../lib/formatters');
+const { sectorKind } = require('../../../lib/sectors');
 
 // Painel do gestor: situação do acervo, inventários em curso, pendências,
 // movimentações e as métricas de produtividade que sustentam o pitch
@@ -6,8 +7,9 @@ const { formatInventory, formatAssetEvent } = require('../../../lib/formatters')
 class GetDashboardOperation {
   constructor({
     assetRepository, unitRepository, inventoryRepository, inventoryCheckRepository, discrepancyRepository,
-    movementRepository, assetEventRepository, inventorySummaryService,
+    movementRepository, assetEventRepository, inventorySummaryService, assetRequestRepository,
   }) {
+    this.assetRequestRepository = assetRequestRepository;
     this.assetRepository = assetRepository;
     this.unitRepository = unitRepository;
     this.inventoryRepository = inventoryRepository;
@@ -43,16 +45,48 @@ class GetDashboardOperation {
     // Cobertura por unidade: % de bens conferidos nos últimos 12 meses. É o
     // indicador de "equidade entre capital e interior" que o desafio cobra.
     const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-    const recentMap = toMap(await this.assetRepository.countCheckedSinceByUnit(since));
+    const [recentRows, sectorRows, openRequests] = await Promise.all([
+      this.assetRepository.countCheckedSinceByUnit(since),
+      this.assetRepository.coverageBySector(since),
+      this.assetRequestRepository.countBy('urgency', { status: { $in: ['aberta', 'em_analise'] } }),
+    ]);
+    const requestMap = toMap(openRequests);
+    const recentMap = toMap(recentRows);
+    const pct = (checked, assets) => (assets ? Math.round((checked / assets) * 100) : 0);
+
+    // Dentro de cada comarca, a mesma cobertura por setor (vara, gabinete…), do
+    // menos conferido para o mais — é onde o gestor precisa agir primeiro.
+    const sectorsByUnit = sectorRows.reduce((acc, r) => {
+      (acc[r._id.unit_id] = acc[r._id.unit_id] || []).push({
+        name: r._id.location || '',
+        kind: r._id.location ? sectorKind(r._id.location) : 'outro',
+        assets: r.assets,
+        checked: r.checked,
+        pct: pct(r.checked, r.assets),
+      });
+      return acc;
+    }, {});
+
+    // Setor cadastrado e ainda sem bens também aparece (com 0) — senão uma vara
+    // inteira some do painel justamente quando ninguém lançou o patrimônio dela.
+    const withEmptySectors = (unit, rows) => [
+      ...rows,
+      ...(unit.locations || [])
+        .filter(name => !rows.some(r => r.name === name))
+        .map(name => ({ name, kind: sectorKind(name), assets: 0, checked: 0, pct: 0 })),
+    ];
 
     const coverage = units.map(u => ({
       unitId: u.unit_id,
       name: u.name,
       code: u.code,
+      kind: u.kind || (u.code === 'SEDE' ? 'sede' : 'comarca'),
       region: u.region,
       assets: unitAssets[u.unit_id] || 0,
       checked: recentMap[u.unit_id] || 0,
-      pct: unitAssets[u.unit_id] ? Math.round(((recentMap[u.unit_id] || 0) / unitAssets[u.unit_id]) * 100) : 0,
+      pct: pct(recentMap[u.unit_id] || 0, unitAssets[u.unit_id] || 0),
+      sectors: withEmptySectors(u, sectorsByUnit[u.unit_id] || [])
+        .sort((a, b) => a.pct - b.pct || b.assets - a.assets || a.name.localeCompare(b.name, 'pt-BR')),
     }));
 
     const regionPct = region => {
@@ -68,6 +102,8 @@ class GetDashboardOperation {
         units: units.length,
         openInventories: openInventories.length,
         openDiscrepancies: Object.values(toMap(discByType)).reduce((s, n) => s + n, 0),
+        openRequests: (requestMap.normal || 0) + (requestMap.urgente || 0),
+        urgentRequests: requestMap.urgente || 0,
         movementsInProgress: ['aguardando_aprovacao', 'aprovada', 'em_transito', 'com_pendencia']
           .reduce((s, k) => s + (toMap(movByStatus)[k] || 0), 0),
       },

@@ -1,1 +1,4 @@
-﻿Tombamento;Descrição;Categoria;Marca/Modelo;Nº de série;Unidade;Localização;Responsável;Estado de conservação;Situação;Última conferência
+﻿Nº Tombamento;Descrição do Bem;Categoria;Marca/Modelo;Nº de Série;Unidade;Localização;Responsável;Estado de Conservação;Data de Aquisição;Valor (R$)
+0100901;"Monitor LED 27"" Dell P2723D";Informática;Dell;DEL5512093;Prédio-Sede do TJPA;Almoxarifado Central;Coordenadoria de Patrimônio;Novo;20/10/2026;1.890,00
+0100902;Mouse óptico USB Logitech M90;Informática;Logitech;LOG2207741;Prédio-Sede do TJPA;Almoxarifado Central;Coordenadoria de Patrimônio;Novo;20/10/2026;45,00
+0100903;Cadeira giratória ergonômica com braços;Mobiliário;;;Prédio-Sede do TJPA;Almoxarifado Central;Coordenadoria de Patrimônio;Novo;20/10/2026;820,00

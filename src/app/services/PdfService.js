@@ -302,7 +302,7 @@ class PdfService {
       ['Sem divergência', String(summary.ok)],
       ['Com divergência', String(summary.divergent)],
       ['Não localizados', String(summary.notFound)],
-      ['Não cadastrados / outra unidade', `${summary.notRegistered} / ${summary.otherUnit}`],
+      ['Não cadastrados / outra comarca', `${summary.notRegistered} / ${summary.otherUnit}`],
       ['Tempo médio por bem', summary.avgSeconds ? `${summary.avgSeconds.toFixed(1)} s` : '—'],
       ['Conferências feitas offline', String(summary.offline)],
       ['Início', fmtDate(inventory.started_at)],
@@ -310,9 +310,9 @@ class PdfService {
     ]);
 
     if (byLocation.length) {
-      sectionTitle(doc, 'Progresso por sala/setor');
+      sectionTitle(doc, 'Progresso por setor');
       table(doc, [
-        { key: 'location', header: 'LOCAL', weight: 3 },
+        { key: 'location', header: 'SETOR', weight: 3 },
         { key: 'expected', header: 'PREVISTOS', weight: 1 },
         { key: 'checked', header: 'CONFERIDOS', weight: 1 },
         { key: 'pct', header: '%', weight: 0.7 },
@@ -332,6 +332,45 @@ class PdfService {
     }
 
     footer(doc, `Gerado em ${fmtDate(new Date())} pelo Patrimônio Ágil.`);
+    doc.end();
+    return done;
+  }
+
+  async purchaseLetter({ request, unit }) {
+    const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `Ofício ${request.number}` } });
+    const done = collect(doc);
+
+    header(doc, 'Ofício de Encaminhamento para Aquisição', `Solicitação ${request.number} · ${fmtDate(request.createdAt)}`);
+
+    sectionTitle(doc, 'Pedido');
+    keyValue(doc, [
+      ['Item solicitado', request.item],
+      ['Quantidade', String(request.quantity)],
+      ['Categoria', request.category || '—'],
+      ['Urgência', request.urgency === 'urgente' ? 'Urgente' : 'Normal'],
+      ['Comarca de destino', unit?.name || ''],
+      ['Setor de destino', [request.sector, request.room].filter(Boolean).join(' · ') || '—'],
+      ['Solicitado por', request.requested_by_name],
+      ['Data do pedido', fmtDate(request.createdAt)],
+    ]);
+
+    sectionTitle(doc, 'Justificativa do setor');
+    doc.fillColor(C.ink).font('Helvetica').fontSize(9.5).text(request.justification, 40, doc.y, { width: doc.page.width - 80 });
+
+    sectionTitle(doc, 'Decisão do setor de patrimônio');
+    doc.fillColor(C.ink).font('Helvetica').fontSize(9.5).text(
+      request.purchase_justification
+        ? `Havia bem parecido disponível, mas a compra foi justificada: ${request.purchase_justification}`
+        : 'Não há bem disponível no acervo que atenda ao pedido. Encaminha-se para aquisição.',
+      40, doc.y, { width: doc.page.width - 80 },
+    );
+    doc.moveDown(0.6);
+    keyValue(doc, [
+      ['Decidido por', request.handled_by_name || '—'],
+      ['Data da decisão', fmtDate(request.updatedAt)],
+    ]);
+
+    footer(doc, 'A compra é conduzida fora do Patrimônio Ágil, pelo setor competente.');
     doc.end();
     return done;
   }

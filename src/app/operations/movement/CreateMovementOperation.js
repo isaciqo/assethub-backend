@@ -38,9 +38,9 @@ class CreateMovementOperation {
     const blocked = assets.find(a => a.active_movement_id);
     if (blocked) throw httpError(409, `O bem ${blocked.code} já está em outra movimentação em andamento`);
     if (assets.some(a => a.status === 'baixado')) throw httpError(409, 'Bens baixados não podem ser movimentados');
-    if (new Set(assets.map(a => a.unit_id)).size > 1) throw httpError(400, 'Todos os bens de uma movimentação precisam sair da mesma unidade');
+    if (new Set(assets.map(a => a.unit_id)).size > 1) throw httpError(400, 'Todos os bens de uma movimentação precisam sair da mesma comarca');
 
-    if (!await this.unitRepository.findById(data.destination.unit_id)) throw httpError(404, 'Unidade de destino não encontrada');
+    if (!await this.unitRepository.findById(data.destination.unit_id)) throw httpError(404, 'Comarca de destino não encontrada');
     const people = [...approverIds, data.deliverer_id, data.receiver_id];
     const found = await this.userRepository.findByIds([...new Set(people)]);
     if (found.length !== new Set(people).size) throw httpError(404, 'Algum participante informado não foi encontrado');

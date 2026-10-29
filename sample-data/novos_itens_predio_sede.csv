@@ -1,6 +1,6 @@
-﻿Nº Tombamento;Descrição do Bem;Categoria;Marca/Modelo;Nº de Série;Unidade;Localização;Responsável;Estado de Conservação;Data de Aquisição;Valor (R$)
-0200001;"Notebook Dell Latitude 5440 14""";Informática;Dell;DLT5440A01;Prédio-Sede do TJPA;Secretaria de Informática;Paula Menezes;Novo;15/10/2026;6.290,00
-0200002;"Notebook Dell Latitude 5440 14""";Informática;Dell;DLT5440A02;Prédio-Sede do TJPA;Secretaria de Informática;Diego Santos;Novo;15/10/2026;6.290,00
-0200003;Cadeira giratória ergonômica com braços;Mobiliário;Cavaletti;;Prédio-Sede do TJPA;Secretaria de Administração;Paula Menezes;Bom;03/03/2025;890,00
-0200004;Projetor multimídia Epson PowerLite E20;Audiovisual;Epson;EPSE20X7731;Prédio-Sede do TJPA;Auditório;Márcia Andrade;Bom;12/08/2024;3.450,00
-0200005;Mesa de reunião oval 2,40 m;Mobiliário;;;Prédio-Sede do TJPA;Sala de Reuniões;Roberto Farias;Regular;20/05/2021;1.780,00
+﻿Nº Tombamento;Descrição do Bem;Categoria;Marca/Modelo;Nº de Série;Comarca;Setor;Sala;Responsável;Estado de Conservação;Data de Aquisição;Valor (R$)
+0200001;"Notebook Dell Latitude 5440 14""";Informática;Dell;DLT5440A01;Prédio-Sede do TJPA;Secretaria de Informática;;Paula Menezes;Novo;15/10/2026;6.290,00
+0200002;"Notebook Dell Latitude 5440 14""";Informática;Dell;DLT5440A02;Prédio-Sede do TJPA;Secretaria de Informática;;Diego Santos;Novo;15/10/2026;6.290,00
+0200003;Cadeira giratória ergonômica com braços;Mobiliário;Cavaletti;;Prédio-Sede do TJPA;Secretaria de Administração;;Paula Menezes;Bom;03/03/2025;890,00
+0200004;Projetor multimídia Epson PowerLite E20;Audiovisual;Epson;EPSE20X7731;Prédio-Sede do TJPA;Secretaria de Administração;Auditório;Márcia Andrade;Bom;12/08/2024;3.450,00
+0200005;Mesa de reunião oval 2,40 m;Mobiliário;;;Prédio-Sede do TJPA;Secretaria de Administração;Sala de Reuniões;Roberto Farias;Regular;20/05/2021;1.780,00

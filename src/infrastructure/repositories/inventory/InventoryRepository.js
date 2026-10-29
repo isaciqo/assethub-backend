@@ -14,7 +14,7 @@ class InventoryRepository {
   }
 
   async findOpenByUnit(unit_id) {
-    return Inventory.findOne({ unit_id, status: 'em_andamento' });
+    return Inventory.find({ unit_id, status: 'em_andamento' });
   }
 
   async update(inventory_id, data) {

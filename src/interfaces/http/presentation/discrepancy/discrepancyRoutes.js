@@ -18,9 +18,11 @@ module.exports = [
         unit_id: Joi.string().optional(),
         status: Joi.string().valid('aberta', 'resolvida').optional(),
         type: Joi.string().valid(...Object.values(DISCREPANCY_TYPES)).optional(),
+        source: Joi.string().valid('inventario', 'validacao').optional(),
+        location: Joi.string().allow('').optional(),
       }),
     },
-    swagger: doc('Discrepancies', 'Fila de pendências do inventário'),
+    swagger: doc('Discrepancies', 'Fila de pendências, com filtros por tipo, situação, comarca/setor, origem e inventário'),
   },
   {
     method: 'post',

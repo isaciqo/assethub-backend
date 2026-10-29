@@ -1,14 +1,26 @@
 const Asset = require('../../../database/models/asset/assetModel');
 const { escapeRegex, normalizeCode } = require('../../../lib/text');
 
+// Janela da "cobertura": bem conferido há até 12 meses está em dia.
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
 class AssetRepository {
-  buildFilter({ unit_id, location, status, category, conservation_status, search } = {}) {
+  buildFilter({ unit_id, location, room, status, category, brand, responsible_name, conservation_status, checked, search } = {}) {
     const filter = {};
     if (unit_id) filter.unit_id = unit_id;
     if (location) filter.location = location;
+    if (room) filter.room = room;
     if (status) filter.status = status;
     if (category) filter.category = category;
+    if (brand) filter.brand = brand;
+    if (responsible_name) filter.responsible_name = responsible_name;
     if (conservation_status) filter.conservation_status = conservation_status;
+    if (checked) {
+      const since = new Date(Date.now() - YEAR_MS);
+      if (checked === 'em_dia') filter.last_checked_at = { $gte: since };
+      if (checked === 'atrasada') filter.last_checked_at = { $lt: since };
+      if (checked === 'nunca') filter.last_checked_at = null;
+    }
     if (search) {
       const rx = { $regex: escapeRegex(search), $options: 'i' };
       filter.$or = [
@@ -18,6 +30,8 @@ class AssetRepository {
         { responsible_name: rx },
         { serial_number: rx },
         { location: rx },
+        { room: rx },
+        { brand: rx },
       ];
     }
     return filter;
@@ -94,6 +108,21 @@ class AssetRepository {
     return Asset.aggregate([
       { $match: { last_checked_at: { $gte: since } } },
       { $group: { _id: '$unit_id', count: { $sum: 1 } } },
+    ]);
+  }
+
+  // Cobertura por setor: total de bens e quantos foram conferidos desde "since",
+  // agrupados por comarca + setor. Bens baixados não contam.
+  async coverageBySector(since) {
+    return Asset.aggregate([
+      { $match: { status: { $ne: 'baixado' } } },
+      {
+        $group: {
+          _id: { unit_id: '$unit_id', location: '$location' },
+          assets: { $sum: 1 },
+          checked: { $sum: { $cond: [{ $gte: ['$last_checked_at', since] }, 1, 0] } },
+        },
+      },
     ]);
   }
 

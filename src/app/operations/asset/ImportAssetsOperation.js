@@ -5,7 +5,7 @@ const { normalizeCode, normalize } = require('../../../lib/text');
 const { formatUnit } = require('../../../lib/formatters');
 
 // Campos que a planilha oficial pode atualizar num bem já existente.
-const UPDATABLE = ['code', 'description', 'category', 'brand', 'serial_number', 'unit_id', 'location', 'responsible_name', 'conservation_status', 'acquisition_date', 'value', 'notes'];
+const UPDATABLE = ['code', 'description', 'category', 'brand', 'serial_number', 'unit_id', 'location', 'room', 'responsible_name', 'conservation_status', 'acquisition_date', 'value', 'notes'];
 
 function unitCodeFrom(name) {
   const words = normalize(name).split(' ').filter(w => w.length > 2 && !['de', 'da', 'do', 'das', 'dos'].includes(w));
@@ -55,7 +55,7 @@ class ImportAssetsOperation {
       .map(r => ({ line: r.line, code: r.code, message: `Estado "${r.conservation_warning}" não reconhecido — importado como "bom"` }));
 
     const defaultUnit = default_unit_id ? await this.unitRepository.findById(default_unit_id) : null;
-    if (default_unit_id && !defaultUnit) throw httpError(404, 'Unidade padrão não encontrada');
+    if (default_unit_id && !defaultUnit) throw httpError(404, 'Comarca padrão não encontrada');
 
     // Resolve as unidades citadas na planilha (código ou nome), criando as que
     // não existem — só de verdade quando não é prévia.
@@ -66,7 +66,7 @@ class ImportAssetsOperation {
       if (unitCache.has(key)) return unitCache.get(key);
       let unit = await this.unitRepository.findByCodeOrName(name);
       if (!unit) {
-        const draft = { unit_id: uuidv4(), name: name.trim(), code: `${unitCodeFrom(name)}${createdUnits.length + 1}`, region: 'interior', locations: [] };
+        const draft = { unit_id: uuidv4(), name: name.trim(), code: `${unitCodeFrom(name)}${createdUnits.length + 1}`, kind: 'comarca', region: 'interior', locations: [] };
         unit = dryRun ? draft : await this.unitRepository.create(draft);
         createdUnits.push(formatUnit(unit));
       }
@@ -78,7 +78,7 @@ class ImportAssetsOperation {
     for (const r of records) {
       const unit = r.unit ? await resolveUnit(r.unit) : defaultUnit;
       if (!unit) {
-        errors.push({ line: r.line, code: r.code, message: 'Unidade não informada na linha e nenhuma unidade padrão selecionada' });
+        errors.push({ line: r.line, code: r.code, message: 'Comarca não informada na linha e nenhuma comarca padrão selecionada' });
         continue;
       }
       valid.push({ ...r, unit_id: unit.unit_id, code_normalized: normalizeCode(r.code) });
@@ -102,6 +102,7 @@ class ImportAssetsOperation {
         serial_number: r.serial_number,
         unit_id: r.unit_id,
         location: r.location,
+        room: r.room,
         responsible_name: r.responsible_name,
         conservation_status: r.conservation_status,
         acquisition_date: r.acquisition_date,
@@ -147,6 +148,7 @@ class ImportAssetsOperation {
         category: v.category,
         unitId: v.unit_id,
         location: v.location,
+        room: v.room,
         responsibleName: v.responsible_name,
         conservationStatus: v.conservation_status,
         isNew: !existingMap.has(v.code_normalized),

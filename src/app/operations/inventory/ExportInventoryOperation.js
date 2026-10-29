@@ -7,15 +7,15 @@ const C = PdfService.LABELS.conservation;
 const CHECK_STATUS_LABEL = {
   ok: 'Conferido sem divergência',
   divergente: 'Conferido com divergência',
-  outra_unidade: 'Bem de outra unidade',
+  outra_unidade: 'Bem de outra comarca',
   nao_cadastrado: 'Bem não cadastrado',
   duplicada: 'Conferência duplicada',
 };
 
 const DISCREPANCY_LABEL = {
   nao_localizado: 'Não localizado',
-  localizacao_divergente: 'Localização divergente',
-  outra_unidade: 'Bem de outra unidade',
+  localizacao_divergente: 'Setor divergente',
+  outra_unidade: 'Bem de outra comarca',
   nao_cadastrado: 'Bem não cadastrado',
   conferencia_duplicada: 'Conferência duplicada',
   estado_alterado: 'Estado de conservação alterado',
@@ -31,7 +31,7 @@ function describeDiff(d) {
     case 'localizacao_divergente': return `${e.location || '—'} → ${o.location || '—'}`;
     case 'estado_alterado': return `${C[e.condition] || '—'} → ${C[o.condition] || '—'}`;
     case 'responsavel_divergente': return `${e.responsible_name || '—'} → ${o.responsible_name || '—'}`;
-    case 'outra_unidade': return `Cadastrado em outra unidade (${e.location || '—'}); encontrado em ${o.location || '—'}`;
+    case 'outra_unidade': return `Cadastrado em outra comarca (${e.location || '—'}); encontrado em ${o.location || '—'}`;
     case 'nao_cadastrado': return `Encontrado em ${o.location || '—'}${o.description ? `: ${o.description}` : ''}`;
     case 'nao_localizado': return `Previsto em ${e.location || '—'}`;
     case 'conferencia_duplicada': return `1ª por ${e.checked_by_name || '—'}; repetida por ${o.checked_by_name || '—'}`;
@@ -84,8 +84,8 @@ class ExportInventoryOperation {
       { key: 'code', header: 'Tombamento', width: 14 },
       { key: 'description', header: 'Descrição', width: 38 },
       { key: 'status', header: 'Resultado', width: 26 },
-      { key: 'expected_location', header: 'Local cadastrado', width: 20 },
-      { key: 'observed_location', header: 'Local encontrado', width: 20 },
+      { key: 'expected_location', header: 'Setor cadastrado', width: 20 },
+      { key: 'observed_location', header: 'Setor encontrado', width: 20 },
       { key: 'condition', header: 'Estado encontrado', width: 16 },
       { key: 'responsible', header: 'Responsável informado', width: 22 },
       { key: 'method', header: 'Identificação', width: 20 },
@@ -122,7 +122,7 @@ class ExportInventoryOperation {
 
     const summaryRows = [
       ['Inventário', `${inventory.number} — ${inventory.name}`],
-      ['Unidade', unit?.name || ''],
+      ['Comarca', unit?.name || ''],
       ['Situação', inventory.status === 'concluido' ? 'Concluído' : 'Em andamento'],
       ['Início', fmt(inventory.started_at)],
       ['Encerramento', fmt(inventory.completed_at)],
@@ -131,7 +131,7 @@ class ExportInventoryOperation {
       ['Progresso (%)', summary.progress],
       ['Sem divergência', summary.ok],
       ['Com divergência', summary.divergent],
-      ['Bens de outra unidade', summary.otherUnit],
+      ['Bens de outra comarca', summary.otherUnit],
       ['Bens não cadastrados', summary.notRegistered],
       ['Conferências duplicadas', summary.duplicates],
       ['Não localizados', summary.notFound],
@@ -161,7 +161,7 @@ class ExportInventoryOperation {
         columns: [
           { key: 'code', header: 'Tombamento', width: 14 },
           { key: 'description', header: 'Descrição', width: 40 },
-          { key: 'location', header: 'Local cadastrado', width: 22 },
+          { key: 'location', header: 'Setor cadastrado', width: 22 },
           { key: 'responsible', header: 'Responsável', width: 24 },
         ],
         rows: pendingRows,

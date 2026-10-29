@@ -35,6 +35,7 @@ class GetInventorySnapshotOperation {
         brand: a.brand || '',
         serialNumber: a.serial_number || '',
         location: a.location || '',
+        room: a.room || '',
         responsibleName: a.responsible_name || '',
         conservationStatus: a.conservation_status,
       })),

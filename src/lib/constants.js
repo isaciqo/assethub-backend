@@ -47,7 +47,7 @@ const ALL_DISCREPANCY_ACTIONS = [...new Set(Object.values(DISCREPANCY_ACTIONS).f
 // Regras de movimentação. A quantidade de aprovações NÃO é regra oficial do
 // TJPA — é um padrão configurável aqui, para validar com o setor de patrimônio.
 const MOVEMENT_TYPES = {
-  transferencia_interna: { label: 'Transferência interna (entre salas)', minApprovals: 0, requiresCarrier: false },
+  transferencia_interna: { label: 'Transferência interna (entre setores)', minApprovals: 0, requiresCarrier: false },
   transferencia_unidade: { label: 'Transferência entre unidades', minApprovals: 1, requiresCarrier: false },
   mudanca_responsavel: { label: 'Mudança de responsável', minApprovals: 1, requiresCarrier: false },
   devolucao: { label: 'Devolução ao setor de patrimônio', minApprovals: 1, requiresCarrier: false },
@@ -66,6 +66,26 @@ const MOVEMENT_STATUS = [
 
 const EVIDENCE_KINDS = ['foto', 'assinatura', 'documento'];
 
+// Solicitação de bem (o "ofício" do setor). Quem atende é sempre uma
+// movimentação; compra fica fora do sistema — aqui só se registra o
+// encaminhamento e se gera o ofício em PDF.
+const REQUEST_STATUS = ['aberta', 'em_analise', 'em_atendimento', 'atendida', 'encaminhada_compra', 'recusada', 'cancelada'];
+const REQUEST_OPEN_STATUS = ['aberta', 'em_analise'];
+
+// Itens padrão: pedir com um toque, já na categoria certa — e é pela categoria
+// que o sistema acha um bem parado para reaproveitar antes de comprar.
+const REQUEST_CATALOG = [
+  { item: 'Cadeira giratória', category: 'Mobiliário' },
+  { item: 'Mesa de trabalho', category: 'Mobiliário' },
+  { item: 'Armário', category: 'Mobiliário' },
+  { item: 'Gaveteiro', category: 'Mobiliário' },
+  { item: 'Monitor', category: 'Informática' },
+  { item: 'Notebook', category: 'Informática' },
+  { item: 'Computador', category: 'Informática' },
+  { item: 'Impressora', category: 'Informática' },
+  { item: 'Ar-condicionado', category: 'Climatização' },
+];
+
 module.exports = {
   ROLES,
   CONSERVATION_STATUS,
@@ -79,4 +99,7 @@ module.exports = {
   MOVEMENT_TYPES,
   MOVEMENT_STATUS,
   EVIDENCE_KINDS,
+  REQUEST_STATUS,
+  REQUEST_OPEN_STATUS,
+  REQUEST_CATALOG,
 };

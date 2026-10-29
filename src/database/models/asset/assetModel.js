@@ -13,7 +13,11 @@ const assetSchema = new mongoose.Schema({
   brand: { type: String, default: '' },
   serial_number: { type: String, default: '' },
   unit_id: { type: String, required: true },
+  // Setor do bem (vara, gabinete, secretaria…). O campo manteve o nome antigo
+  // "location" para não mexer no banco nem nos clientes offline já instalados.
   location: { type: String, default: '' },
+  // Sala dentro do setor — opcional, texto livre.
+  room: { type: String, default: '' },
   responsible_name: { type: String, default: '' },
   conservation_status: { type: String, enum: CONSERVATION_STATUS, default: 'bom' },
   status: { type: String, enum: ASSET_STATUS, default: 'ativo' },

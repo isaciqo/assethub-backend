@@ -40,9 +40,15 @@ module.exports = [
       query: Joi.object({
         status: Joi.string().valid(...MOVEMENT_STATUS).optional(),
         scope: Joi.string().valid('all', 'mine', 'waiting_me').optional(),
+        type: Joi.string().valid(...Object.keys(MOVEMENT_TYPES)).optional(),
+        unit_id: Joi.string().optional(),
+        location: Joi.string().allow('').optional(),
+        person_id: Joi.string().optional(),
+        from: Joi.date().iso().optional(),
+        to: Joi.date().iso().optional(),
       }),
     },
-    swagger: doc('Movements', 'Lista movimentações (todas, minhas ou aguardando minha ação)'),
+    swagger: doc('Movements', 'Lista movimentações (todas, minhas ou aguardando minha ação) com filtros por tipo, comarca/setor, pessoa e período'),
   },
   {
     method: 'post',

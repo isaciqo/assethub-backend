@@ -1,7 +1,7 @@
 const httpError = require('../../../lib/httpError');
 const { formatAsset } = require('../../../lib/formatters');
 
-const EDITABLE = ['description', 'category', 'brand', 'serial_number', 'location', 'responsible_name', 'conservation_status', 'status', 'value', 'notes'];
+const EDITABLE = ['description', 'category', 'brand', 'serial_number', 'location', 'room', 'responsible_name', 'conservation_status', 'status', 'value', 'notes'];
 
 class UpdateAssetOperation {
   constructor({ assetRepository, unitRepository, assetEventService }) {

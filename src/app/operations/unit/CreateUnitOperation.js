@@ -8,15 +8,16 @@ class CreateUnitOperation {
     this.auditService = auditService;
   }
 
-  async execute({ actor, name, code, city, region, locations }) {
+  async execute({ actor, name, code, city, kind, region, locations }) {
     if (await this.unitRepository.findByCodeOrName(code) || await this.unitRepository.findByCodeOrName(name)) {
-      throw httpError(409, 'Já existe uma unidade com esse nome ou código');
+      throw httpError(409, 'Já existe uma comarca com esse nome ou código');
     }
     const unit = await this.unitRepository.create({
       unit_id: uuidv4(),
       name,
       code,
       city: city || '',
+      kind: kind || 'comarca',
       region: region || 'interior',
       locations: locations || [],
     });

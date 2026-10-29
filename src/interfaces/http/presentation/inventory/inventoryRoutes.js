@@ -55,7 +55,7 @@ module.exports = [
     },
     swagger: doc('Inventories', 'Abre inventário (congela a lista de bens previstos)'),
   },
-  { method: 'get', path: '/inventories/:inventory_id', handler: 'inventoryController.detail', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Inventories', 'Detalhe com progresso por sala, equipe e últimas conferências') },
+  { method: 'get', path: '/inventories/:inventory_id', handler: 'inventoryController.detail', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Inventories', 'Detalhe com progresso por setor, equipe e últimas conferências') },
   { method: 'get', path: '/inventories/:inventory_id/snapshot', handler: 'inventoryController.snapshot', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Inventories', 'Pacote para conferência offline') },
   { method: 'get', path: '/inventories/:inventory_id/checks', handler: 'inventoryController.checks', middlewares: [authMiddleware], validation: { params: byId }, swagger: doc('Inventories', 'Todas as conferências do inventário') },
   { method: 'post', path: '/inventories/:inventory_id/complete', handler: 'inventoryController.complete', middlewares: [authMiddleware, requireRole('admin', 'gestor')], validation: { params: byId }, swagger: doc('Inventories', 'Encerra o inventário e gera pendências de não localizados') },

@@ -9,12 +9,17 @@ class ListDiscrepanciesOperation {
     this.possessionCheckRepository = possessionCheckRepository;
   }
 
-  async execute({ inventory_id, unit_id, status, type } = {}) {
+  async execute({ inventory_id, unit_id, status, type, source, location } = {}) {
     const filter = {};
     if (inventory_id) filter.inventory_id = inventory_id;
     if (unit_id) filter.unit_id = unit_id;
     if (status) filter.status = status;
     if (type) filter.type = type;
+    // Pendências antigas não têm "source": são todas do inventário.
+    if (source === 'validacao') filter.source = 'validacao';
+    if (source === 'inventario') filter.source = { $ne: 'validacao' };
+    // Setor: onde o bem devia estar ou onde foi encontrado.
+    if (location) filter.$or = [{ 'expected.location': location }, { 'observed.location': location }];
 
     const list = await this.discrepancyRepository.find(filter);
     const assetIds = [...new Set(list.map(d => d.asset_id).filter(Boolean))];
