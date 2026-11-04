@@ -22,7 +22,19 @@ const DISCREPANCY_LABEL = {
   responsavel_divergente: 'Responsável divergente',
 };
 
-const METHOD_LABEL = { qr: 'QR Code', barcode: 'Código de barras', ocr: 'Leitura da plaqueta (OCR)', manual: 'Digitação', busca: 'Busca' };
+const RESOLUTION_LABEL = {
+  atualizar_cadastro: 'Atualizar cadastro',
+  manter_cadastro: 'Manter cadastro',
+  abrir_movimentacao: 'Regularizar com movimentação',
+  marcar_nao_localizado: 'Marcar como não localizado',
+  localizado_depois: 'Foi localizado depois',
+  descartar: 'Descartar',
+  cadastrar_bem: 'Cadastrar o bem',
+  manter_primeira: 'Manter a primeira',
+  usar_esta: 'Usar esta conferência',
+};
+
+const METHOD_LABEL ={ qr: 'QR Code', barcode: 'Código de barras', ocr: 'Leitura da plaqueta (OCR)', manual: 'Digitação', busca: 'Busca' };
 
 function describeDiff(d) {
   const e = d.expected || {};
@@ -70,13 +82,15 @@ class ExportInventoryOperation {
       description: assetMap[d.asset_id]?.description || d.observed?.description || '',
       type: DISCREPANCY_LABEL[d.type] || d.type,
       detail: describeDiff(d),
-      status: d.status === 'aberta' ? 'Aberta' : `Resolvida (${d.resolution?.action || ''})`,
+      status: d.status === 'aberta' ? 'Aberta' : `Resolvida: ${RESOLUTION_LABEL[d.resolution?.action] || d.resolution?.action || ''}`,
       resolved_by: d.resolution?.resolved_by_name || '',
       note: d.resolution?.note || '',
     }));
 
     if (format === 'pdf') {
-      const buffer = await this.pdfService.inventoryReport({ inventory, unit, summary, discrepancies: discRows, byLocation: summary.byLocation || [] });
+      // A fonte padrão do PDF não tem "→"; "»" existe nela.
+      const pdfRows = discRows.map(r => ({ ...r, detail: r.detail.replace(/→/g, '»') }));
+      const buffer = await this.pdfService.inventoryReport({ inventory, unit, summary, discrepancies: pdfRows, byLocation: summary.byLocation || [] });
       return { buffer, mime: 'application/pdf', fileName: `relatorio-${base}.pdf` };
     }
 
