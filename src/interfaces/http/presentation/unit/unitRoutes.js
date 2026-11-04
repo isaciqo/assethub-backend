@@ -37,4 +37,15 @@ module.exports = [
     },
     swagger: doc('Units', 'Fixa a posição atual como ponto de referência da unidade'),
   },
+  {
+    method: 'put',
+    path: '/units/:unit_id/sector-owner',
+    handler: 'unitController.setSectorOwner',
+    middlewares: [authMiddleware, requireRole('admin', 'gestor')],
+    validation: {
+      params: Joi.object({ unit_id: Joi.string().required() }),
+      body: Joi.object({ location: Joi.string().max(120).required(), user_id: Joi.string().allow('', null).optional() }),
+    },
+    swagger: doc('Units', 'Define quem responde pelos pedidos de bens feitos a um setor'),
+  },
 ];

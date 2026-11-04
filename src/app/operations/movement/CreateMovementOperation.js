@@ -48,7 +48,8 @@ class CreateMovementOperation {
     const movement_id = uuidv4();
     // Gerente que pede e se indica como aprovador já gerou a necessidade: a
     // aprovação dele vale na hora, sem uma etapa extra para ele mesmo clicar.
-    const selfApproves = this.movementPolicyService.isManager(actor) && approverIds.includes(actor.user_id);
+    // self_approve: uso interno (responsável do setor atendendo um pedido).
+    const selfApproves = (this.movementPolicyService.isManager(actor) || data.self_approve === true) && approverIds.includes(actor.user_id);
     const approvals = approverIds.map(user_id => (selfApproves && user_id === actor.user_id
       ? { user_id, status: 'aprovada', note: 'Aprovada por quem solicitou', decided_at: new Date(), decided_by: actor.user_id }
       : { user_id }));

@@ -31,6 +31,22 @@ class CreateAssetRequestOperation {
     const unit_id = place.unit_id || actor.unit_id;
     if (!unit_id || !await this.unitRepository.findById(unit_id)) throw httpError(400, 'Informe a comarca de destino');
 
+    // Pedido feito a um setor: com responsável definido, vai primeiro para ele.
+    let source = {};
+    let status = 'aberta';
+    if (data.source_unit_id && data.source_sector) {
+      const sourceUnit = await this.unitRepository.findById(data.source_unit_id);
+      if (!sourceUnit) throw httpError(400, 'Comarca do setor não encontrada');
+      const owner = (sourceUnit.sector_owners || []).find(o => o.location === data.source_sector);
+      source = {
+        source_unit_id: sourceUnit.unit_id,
+        source_sector: data.source_sector,
+        source_owner_id: owner?.user_id || null,
+        source_owner_name: owner?.user_name || '',
+      };
+      if (owner && owner.user_id !== actor.user_id) status = 'aguardando_setor';
+    }
+
     const catalog = REQUEST_CATALOG.find(c => normalize(c.item) === normalize(data.item));
     const request_id = uuidv4();
     const number = await this.numberingService.next('SOL');
@@ -57,13 +73,18 @@ class CreateAssetRequestOperation {
       unit_id,
       sector: place.sector || '',
       room: data.room || '',
+      ...source,
+      status,
       item: data.item.trim(),
       category: data.category || catalog?.category || '',
       quantity: data.quantity || 1,
       justification: data.justification.trim(),
       urgency: data.urgency || 'normal',
       attachment_evidence_id,
-      history: [{ at: new Date(), by: actor.user_id, by_name: actor.name || '', action: 'criada', note: '' }],
+      history: [{
+        at: new Date(), by: actor.user_id, by_name: actor.name || '', action: 'criada',
+        note: source.source_sector ? `Pedido ao setor ${source.source_sector}${status === 'aguardando_setor' ? ` (${source.source_owner_name})` : ' (sem responsável: segue para o patrimônio)'}` : '',
+      }],
     });
     await this.auditService.log({ actor_id: actor.user_id, action: 'request.create', resource_type: 'request', resource_id: request_id });
     return formatAssetRequest(request);

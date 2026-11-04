@@ -17,8 +17,10 @@ class MovementCompletionService {
     if (!request || request.status !== 'em_atendimento') return;
     const entry = action => ({ at: new Date(), by: 'sistema', by_name: 'Sistema', action, note: `Movimentação ${movement.number}` });
     if (outcome === 'released') {
+      // Envio do próprio setor desfeito: o pedido volta para o responsável do setor.
+      const backToSector = request.source_owner_id && request.handled_by === request.source_owner_id;
       await this.assetRequestRepository.update(request.request_id, {
-        status: 'em_analise',
+        status: backToSector ? 'aguardando_setor' : 'em_analise',
         $pull: { movement_ids: movement.movement_id },
         $push: { history: entry('movimentacao_encerrada') },
       });

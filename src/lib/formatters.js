@@ -34,7 +34,10 @@ function formatUnit(u) {
     locations: [...(u.locations || [])].sort((a, b) => a.localeCompare(b, 'pt-BR')),
     sectors: [...(u.locations || [])]
       .sort((a, b) => a.localeCompare(b, 'pt-BR'))
-      .map(name => ({ name, kind: sectorKind(name) })),
+      .map(name => {
+        const owner = (u.sector_owners || []).find(o => o.location === name);
+        return { name, kind: sectorKind(name), ownerId: owner?.user_id || null, ownerName: owner?.user_name || '' };
+      }),
     geo: u.geo?.lat != null ? { lat: u.geo.lat, lng: u.geo.lng } : null,
   };
 }
@@ -275,6 +278,7 @@ function formatAssetRequest(r) {
     unitId: r.unit_id,
     sector: r.sector || '',
     room: r.room || '',
+    source: r.source_unit_id ? { unitId: r.source_unit_id, sector: r.source_sector || '', ownerId: r.source_owner_id || null, ownerName: r.source_owner_name || '' } : null,
     item: r.item,
     category: r.category || '',
     quantity: r.quantity,

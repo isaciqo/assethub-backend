@@ -81,6 +81,15 @@ const BLANK_USERS = [
   { name: 'Juliana Costa', email: 'interior@tjpa.demo', role: 'servidor', registration: '200106', unit: 'MAB' },
 ];
 
+// Quem responde pelos pedidos de bens feitos a cada setor (o gerente muda na aba
+// Solicitações). Só preenche setores ainda sem responsável.
+const SECTOR_OWNERS = [
+  { unit: 'SEDE', location: 'Secretaria de Informática', email: 'servidor@tjpa.demo' },
+  { unit: 'SEDE', location: 'Secretaria de Administração', email: 'servidora@tjpa.demo' },
+  { unit: 'SEDE', location: 'Almoxarifado Central', email: 'gerente@tjpa.demo' },
+  { unit: 'MAB', location: '1ª Vara Cível', email: 'interior@tjpa.demo' },
+];
+
 // Cria o que falta da estrutura zerada (comarcas, setores e personas) sem
 // apagar nada — serve tanto para o banco vazio quanto para um banco que já está
 // no ar e ganhou uma comarca ou uma persona nova.
@@ -110,6 +119,13 @@ async function seedBlank() {
     created += 1;
   }
   if (created) console.log(`• ${created} usuário(s) criado(s) (senha: ${PASSWORD})`);
+
+  for (const o of SECTOR_OWNERS) {
+    const unit = await unitRepository.findById(units[o.unit].unit_id);
+    const user = await userRepository.findByEmail(o.email);
+    if (!unit || !user || (unit.sector_owners || []).some(x => x.location === o.location)) continue;
+    await unitRepository.update(unit.unit_id, { $push: { sector_owners: { location: o.location, user_id: user.user_id, user_name: user.name } } });
+  }
 }
 
 function writeSampleFiles() {

@@ -13,6 +13,11 @@ const unitSchema = new mongoose.Schema({
   // Setores conhecidos (o tipo — vara, gabinete… — sai do nome, ver lib/sectors).
   // Cresce sozinho na importação e nas conferências.
   locations: { type: [String], default: [] },
+  // Quem responde pelos pedidos de bens feitos a cada setor (definido pelo gerente).
+  sector_owners: {
+    type: [{ _id: false, location: String, user_id: String, user_name: String }],
+    default: [],
+  },
   // Ponto de referência (fixado pelo gerente no local) para saber se uma
   // conferência ou envio foi feito na unidade.
   geo: {

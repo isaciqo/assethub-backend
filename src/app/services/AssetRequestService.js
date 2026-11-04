@@ -14,10 +14,15 @@ class AssetRequestService {
   async load(request_id, actor) {
     const request = await this.assetRequestRepository.findById(request_id);
     if (!request) throw httpError(404, 'Solicitação não encontrada');
-    if (!this.movementPolicyService.isManager(actor) && request.requested_by !== actor.user_id) {
+    if (!this.movementPolicyService.isManager(actor) && request.requested_by !== actor.user_id && !this.isOwner(request, actor)) {
       throw httpError(403, 'Esta solicitação é de outra pessoa');
     }
     return request;
+  }
+
+  // Responsável pelo setor a quem o pedido foi feito.
+  isOwner(request, actor) {
+    return !!request.source_owner_id && request.source_owner_id === actor.user_id;
   }
 
   assertOpen(request) {

@@ -1,9 +1,11 @@
-const { formatAsset, formatPossessionCheck } = require('../../../lib/formatters');
+const { formatAsset, formatAssetRequest, formatPossessionCheck } = require('../../../lib/formatters');
 
 // Tudo o que a pessoa precisa ver na tela dela: os bens no seu nome e as
-// tarefas que o gerente gerou (enviar, confirmar recebimento, validar).
+// tarefas que o gerente gerou (enviar, confirmar recebimento, validar) e os
+// pedidos de bens: os feitos ao setor dela e os dela que o setor negou.
 class GetMyAreaOperation {
-  constructor({ assetRepository, movementRepository, userRepository, possessionCheckRepository }) {
+  constructor({ assetRepository, movementRepository, userRepository, possessionCheckRepository, assetRequestRepository }) {
+    this.assetRequestRepository = assetRequestRepository;
     this.assetRepository = assetRepository;
     this.movementRepository = movementRepository;
     this.userRepository = userRepository;
@@ -11,7 +13,7 @@ class GetMyAreaOperation {
   }
 
   async execute({ actor }) {
-    const [assets, movements, checks] = await Promise.all([
+    const [assets, movements, checks, requests] = await Promise.all([
       this.assetRepository.findByResponsible(actor.name),
       this.movementRepository.find({
         $or: [
@@ -20,6 +22,12 @@ class GetMyAreaOperation {
         ],
       }),
       this.possessionCheckRepository.find({ user_id: actor.user_id, status: 'pendente' }),
+      this.assetRequestRepository.find({
+        $or: [
+          { source_owner_id: actor.user_id, status: 'aguardando_setor' },
+          { requested_by: actor.user_id, status: 'negada_setor' },
+        ],
+      }),
     ]);
 
     const [movAssets, people] = await Promise.all([
@@ -46,6 +54,11 @@ class GetMyAreaOperation {
       tasks: [
         ...movements.map(task),
         ...checks.map(c => ({ kind: 'validar', check: formatPossessionCheck(c), createdAt: c.createdAt })),
+        ...requests.map(r => ({
+          kind: r.status === 'aguardando_setor' ? 'pedido_setor' : 'pedido_negado',
+          request: formatAssetRequest(r),
+          createdAt: r.updatedAt,
+        })),
       ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
     };
   }

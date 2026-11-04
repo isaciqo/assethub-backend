@@ -1,5 +1,6 @@
 class UnitController {
-  constructor({ listUnitsOperation, createUnitOperation, setUnitLocationOperation }) {
+  constructor({ listUnitsOperation, createUnitOperation, setUnitLocationOperation, setSectorOwnerOperation }) {
+    this.setSectorOwnerOperation = setSectorOwnerOperation;
     this.listUnitsOperation = listUnitsOperation;
     this.createUnitOperation = createUnitOperation;
     this.setUnitLocationOperation = setUnitLocationOperation;
@@ -11,6 +12,10 @@ class UnitController {
 
   async setLocation(req, res) {
     res.status(200).json(await this.setUnitLocationOperation.execute({ actor: req.user, unit_id: req.params.unit_id, geo: req.body }));
+  }
+
+  async setSectorOwner(req, res) {
+    res.status(200).json(await this.setSectorOwnerOperation.execute({ actor: req.user, unit_id: req.params.unit_id, ...req.body }));
   }
 
   async create(req, res) {

@@ -22,6 +22,12 @@ const assetRequestSchema = new mongoose.Schema({
   unit_id: { type: String, required: true },
   sector: { type: String, default: '' },
   room: { type: String, default: '' },
+  // De onde a pessoa pede: o setor que tem (ou pode ter) o bem. Com responsável
+  // definido, o pedido vai primeiro para ele; sem, segue para o patrimônio.
+  source_unit_id: { type: String, default: null },
+  source_sector: { type: String, default: '' },
+  source_owner_id: { type: String, default: null },
+  source_owner_name: { type: String, default: '' },
   item: { type: String, required: true },
   category: { type: String, default: '' },
   quantity: { type: Number, default: 1 },
@@ -40,5 +46,6 @@ const assetRequestSchema = new mongoose.Schema({
 assetRequestSchema.index({ status: 1, createdAt: -1 });
 assetRequestSchema.index({ requested_by: 1, createdAt: -1 });
 assetRequestSchema.index({ movement_ids: 1 });
+assetRequestSchema.index({ source_owner_id: 1, status: 1 });
 
 module.exports = mongoose.model('AssetRequest', assetRequestSchema);

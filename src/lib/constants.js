@@ -69,7 +69,9 @@ const EVIDENCE_KINDS = ['foto', 'assinatura', 'documento'];
 // Solicitação de bem (o "ofício" do setor). Quem atende é sempre uma
 // movimentação; compra fica fora do sistema — aqui só se registra o
 // encaminhamento e se gera o ofício em PDF.
-const REQUEST_STATUS = ['aberta', 'em_analise', 'em_atendimento', 'atendida', 'encaminhada_compra', 'recusada', 'cancelada'];
+// aguardando_setor / negada_setor: pedido feito direto a um setor, antes de
+// (e se) chegar ao patrimônio.
+const REQUEST_STATUS = ['aguardando_setor', 'negada_setor', 'aberta', 'em_analise', 'em_atendimento', 'atendida', 'encaminhada_compra', 'recusada', 'cancelada'];
 const REQUEST_OPEN_STATUS = ['aberta', 'em_analise'];
 
 // Itens padrão: pedir com um toque, já na categoria certa — e é pela categoria

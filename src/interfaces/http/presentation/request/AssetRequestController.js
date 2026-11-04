@@ -6,7 +6,12 @@ class AssetRequestController {
     createAssetRequestOperation, listAssetRequestsOperation, getAssetRequestOperation, suggestAvailableAssetsOperation,
     fulfillAssetRequestOperation, forwardAssetRequestToPurchaseOperation, rejectAssetRequestOperation,
     cancelAssetRequestOperation, generatePurchaseLetterOperation,
+    listRequestSourcesOperation, listRequestCandidatesOperation, respondAssetRequestOperation, askPurchaseAssetRequestOperation,
   }) {
+    this.listRequestSourcesOperation = listRequestSourcesOperation;
+    this.listRequestCandidatesOperation = listRequestCandidatesOperation;
+    this.respondAssetRequestOperation = respondAssetRequestOperation;
+    this.askPurchaseAssetRequestOperation = askPurchaseAssetRequestOperation;
     this.createAssetRequestOperation = createAssetRequestOperation;
     this.listAssetRequestsOperation = listAssetRequestsOperation;
     this.getAssetRequestOperation = getAssetRequestOperation;
@@ -20,6 +25,22 @@ class AssetRequestController {
 
   async catalog(req, res) {
     res.status(200).json(REQUEST_CATALOG);
+  }
+
+  async sources(req, res) {
+    res.status(200).json(await this.listRequestSourcesOperation.execute());
+  }
+
+  async candidates(req, res) {
+    res.status(200).json(await this.listRequestCandidatesOperation.execute({ actor: req.user, request_id: req.params.request_id, search: req.query.search }));
+  }
+
+  async respond(req, res) {
+    res.status(200).json(await this.respondAssetRequestOperation.execute({ actor: req.user, request_id: req.params.request_id, ...req.body }));
+  }
+
+  async askPurchase(req, res) {
+    res.status(200).json(await this.askPurchaseAssetRequestOperation.execute({ actor: req.user, request_id: req.params.request_id, note: req.body.note }));
   }
 
   async create(req, res) {

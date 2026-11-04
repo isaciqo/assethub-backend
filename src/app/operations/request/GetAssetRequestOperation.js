@@ -21,13 +21,15 @@ class GetAssetRequestOperation {
         $push: { history: this.assetRequestService.entry(actor, 'em_analise') },
       });
     }
-    const [unit, movements] = await Promise.all([
+    const [unit, sourceUnit, movements] = await Promise.all([
       this.unitRepository.findById(request.unit_id),
+      request.source_unit_id ? this.unitRepository.findById(request.source_unit_id) : null,
       Promise.all(request.movement_ids.map(id => this.movementRepository.findById(id))),
     ]);
     return {
       ...formatAssetRequest(request),
       unitName: unit?.name || '',
+      sourceUnitName: sourceUnit?.name || '',
       movements: movements.filter(Boolean).map(m => ({ id: m.movement_id, number: m.number, status: m.status, assetCount: m.asset_ids.length })),
     };
   }

@@ -1,6 +1,7 @@
 const { formatAssetRequest } = require('../../../lib/formatters');
 
-// Gestor vê a fila inteira (com filtros); os demais perfis, só os próprios pedidos.
+// Caixas: "meus" (o que a pessoa pediu), "setor" (pedidos feitos aos setores
+// que ela responde) e, para o gestor, a fila inteira do patrimônio.
 class ListAssetRequestsOperation {
   constructor({ assetRequestRepository, unitRepository, movementPolicyService }) {
     this.assetRequestRepository = assetRequestRepository;
@@ -8,9 +9,11 @@ class ListAssetRequestsOperation {
     this.movementPolicyService = movementPolicyService;
   }
 
-  async execute({ actor, status, unit_id, sector, urgency, mine, from, to }) {
+  async execute({ actor, status, unit_id, sector, urgency, mine, box, from, to }) {
     const filter = {};
-    if (!this.movementPolicyService.isManager(actor) || mine === true || mine === 'true') filter.requested_by = actor.user_id;
+    if (box === 'setor') filter.source_owner_id = actor.user_id;
+    else if (box === 'meus' || mine === true || mine === 'true') filter.requested_by = actor.user_id;
+    else if (!this.movementPolicyService.isManager(actor)) filter.$or = [{ requested_by: actor.user_id }, { source_owner_id: actor.user_id }];
     if (status === 'abertas') filter.status = { $in: ['aberta', 'em_analise'] };
     else if (status) filter.status = status;
     if (unit_id) filter.unit_id = unit_id;
@@ -24,7 +27,7 @@ class ListAssetRequestsOperation {
     }
     const [list, units] = await Promise.all([this.assetRequestRepository.find(filter), this.unitRepository.findAll()]);
     const unitName = Object.fromEntries(units.map(u => [u.unit_id, u.name]));
-    return list.map(r => ({ ...formatAssetRequest(r), unitName: unitName[r.unit_id] || '' }));
+    return list.map(r => ({ ...formatAssetRequest(r), unitName: unitName[r.unit_id] || '', sourceUnitName: unitName[r.source_unit_id] || '' }));
   }
 }
 
