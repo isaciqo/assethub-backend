@@ -67,6 +67,14 @@ const BLANK_UNITS = [
       'Secretaria do Fórum',
     ],
   },
+  {
+    name: 'Escola Judicial do Pará (EJPA)',
+    code: 'EJPA',
+    kind: 'sede',
+    city: 'Belém',
+    region: 'capital',
+    sectors: ["Laboratório de Inovação Pai d'Égua"],
+  },
 ];
 
 // Personas em dois blocos (ver tela de login):
