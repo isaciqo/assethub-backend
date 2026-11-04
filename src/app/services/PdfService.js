@@ -24,6 +24,20 @@ const LABELS = {
     cancelada: 'Cancelada',
   },
   approval: { pendente: 'Pendente', aprovada: 'Aprovada', rejeitada: 'Rejeitada' },
+  assetStatus: { ativo: 'Ativo', em_movimentacao: 'Em movimentação', nao_localizado: 'Não localizado', baixado: 'Baixado' },
+  event: {
+    importado: 'Importado',
+    atualizado_importacao: 'Atualizado pela planilha',
+    cadastrado: 'Cadastrado',
+    editado: 'Ajuste no cadastro',
+    baixado: 'Baixado',
+    conferido: 'Conferido',
+    pendencia_resolvida: 'Pendência resolvida',
+    movimentacao_aberta: 'Movimentação aberta',
+    movimentacao_entrega: 'Enviado',
+    movimentacao_concluida: 'Movimentado',
+    movimentacao_encerrada: 'Movimentação encerrada',
+  },
 };
 
 const fmtDate = d => (d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Belem' }) : '—');
@@ -329,6 +343,117 @@ class PdfService {
         { key: 'detail', header: 'CADASTRO × CAMPO', weight: 3 },
         { key: 'status', header: 'SITUAÇÃO', weight: 1.4 },
       ], discrepancies);
+    }
+
+    footer(doc, `Gerado em ${fmtDate(new Date())} pelo Erekoara.`);
+    doc.end();
+    return done;
+  }
+
+  async assetReport({ asset, unit, lastCheck, photo, openDiscrepancies, checks, totalChecks, movements, events, totalEvents }) {
+    const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `Bem ${asset.code}` } });
+    const done = collect(doc);
+    const W = doc.page.width - 80;
+    const cons = s => LABELS.conservation[s] || s || '—';
+
+    header(doc, 'Relatório do Bem', `${asset.code} · ${asset.description}`);
+
+    sectionTitle(doc, 'Situação atual');
+    const top = doc.y;
+    const textW = photo ? W - 150 : W;
+    // Com foto, os dados ocupam a coluna da esquerda e a foto fica à direita.
+    const kv = (pairs) => {
+      for (let i = 0; i < pairs.length; i += 2) {
+        const y = doc.y;
+        let maxH = 0;
+        pairs.slice(i, i + 2).forEach(([k, v], j) => {
+          const x = 40 + j * (textW / 2);
+          doc.fillColor(C.muted).font('Helvetica').fontSize(7.5).text(k.toUpperCase(), x, y, { width: textW / 2 - 10 });
+          doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(9.5).text(v || '—', x, y + 10, { width: textW / 2 - 10 });
+          maxH = Math.max(maxH, doc.y - y);
+        });
+        doc.y = y + maxH + 6;
+      }
+    };
+    kv([
+      ['Tombamento', asset.code],
+      ['Situação', LABELS.assetStatus[asset.status] || asset.status],
+      ['Descrição', asset.description],
+      ['Categoria', [asset.category, asset.brand].filter(Boolean).join(' · ')],
+      ['Comarca', unit?.name || '—'],
+      ['Setor · sala', [asset.location, asset.room].filter(Boolean).join(' · ')],
+      ['Responsável', asset.responsible_name || 'Sem responsável'],
+      ['Estado de conservação', cons(asset.conservation_status)],
+      ['Nº de série', asset.serial_number],
+      ['Aquisição', [asset.acquisition_date ? new Date(asset.acquisition_date).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' }) : '', asset.value ? `R$ ${Number(asset.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''].filter(Boolean).join(' · ')],
+      ['Última conferência', lastCheck ? `${fmtDate(lastCheck.checked_at)} · ${lastCheck.checked_by_name || ''}` : 'Nunca conferido'],
+      ['Em movimentação', asset.active_movement_id ? 'Sim, há uma movimentação em andamento' : 'Não'],
+    ]);
+    if (photo) {
+      const x = 40 + W - 140;
+      try {
+        doc.image(photo.data, x, top, { fit: [140, 140], align: 'center', valign: 'center' });
+        doc.fillColor(C.muted).font('Helvetica').fontSize(7).text(`Foto da conferência · ${fmtDate(photo.at)}${photo.by ? ` · ${photo.by}` : ''}`, x, top + 144, { width: 140, align: 'center' });
+        doc.y = Math.max(doc.y, top + 168);
+      } catch { /* imagem ilegível: o relatório sai sem a foto */ }
+    }
+
+    sectionTitle(doc, 'Resumo');
+    keyValue(doc, [
+      ['Conferências registradas', String(totalChecks)],
+      ['Movimentações', `${movements.length}${movements.some(m => !['concluida', 'rejeitada', 'cancelada'].includes(m.status)) ? ' (uma em andamento)' : ''}`],
+      ['Pendências abertas', String(openDiscrepancies.length)],
+      ['Eventos no histórico', String(totalEvents)],
+    ], 4);
+
+    sectionTitle(doc, `Pendências abertas (${openDiscrepancies.length})`);
+    if (!openDiscrepancies.length) {
+      doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('Nenhuma pendência aberta para este bem.', 40, doc.y);
+    } else {
+      table(doc, [
+        { key: 'type', header: 'TIPO', weight: 2 },
+        { key: 'origin', header: 'ORIGEM', weight: 1.4 },
+        { key: 'at', header: 'ABERTA EM', weight: 1.4 },
+      ], openDiscrepancies.map(d => ({ ...d, at: fmtDate(d.at) })));
+    }
+
+    sectionTitle(doc, `Conferências${totalChecks > checks.length ? ` (últimas ${checks.length} de ${totalChecks})` : ` (${totalChecks})`}`);
+    if (!checks.length) {
+      doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('O bem ainda não foi conferido.', 40, doc.y);
+    } else {
+      table(doc, [
+        { key: 'at', header: 'DATA', weight: 1.3 },
+        { key: 'inventory', header: 'INVENTÁRIO', weight: 1.1 },
+        { key: 'by', header: 'CONFERIDO POR', weight: 1.4 },
+        { key: 'location', header: 'ONDE ESTAVA', weight: 1.6 },
+        { key: 'condition', header: 'ESTADO', weight: 0.8 },
+        { key: 'result', header: 'RESULTADO', weight: 1.2 },
+      ], checks.map(c => ({ ...c, at: fmtDate(c.at), condition: cons(c.condition) })));
+    }
+
+    sectionTitle(doc, `Movimentações (${movements.length})`);
+    if (!movements.length) {
+      doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('O bem nunca foi movimentado.', 40, doc.y);
+    } else {
+      table(doc, [
+        { key: 'number', header: 'NÚMERO', weight: 1.1 },
+        { key: 'type', header: 'TIPO', weight: 1.6 },
+        { key: 'route', header: 'DE » PARA', weight: 3 },
+        { key: 'status', header: 'SITUAÇÃO', weight: 1.1 },
+        { key: 'at', header: 'ABERTA EM', weight: 1.3 },
+      ], movements.map(m => ({ ...m, status: LABELS.status[m.status] || m.status, at: fmtDate(m.at) })));
+    }
+
+    sectionTitle(doc, `Linha do tempo${totalEvents > events.length ? ` (últimos ${events.length} de ${totalEvents})` : ''}`);
+    if (!events.length) {
+      doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('Sem eventos registrados.', 40, doc.y);
+    } else {
+      table(doc, [
+        { key: 'at', header: 'DATA', weight: 1.2 },
+        { key: 'type', header: 'EVENTO', weight: 1.2 },
+        { key: 'summary', header: 'O QUE ACONTECEU', weight: 4 },
+        { key: 'by', header: 'POR', weight: 1.3 },
+      ], events.map(e => ({ ...e, at: fmtDate(e.at), type: LABELS.event[e.type] || e.type, summary: String(e.summary).replace(/→/g, '»') })));
     }
 
     footer(doc, `Gerado em ${fmtDate(new Date())} pelo Erekoara.`);

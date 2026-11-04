@@ -3,8 +3,9 @@ const sendFile = require('../shared/sendFile');
 class AssetController {
   constructor({
     listAssetsOperation, getAssetOperation, getAssetFacetsOperation, createAssetOperation,
-    updateAssetOperation, importAssetsOperation, exportAssetsOperation,
+    updateAssetOperation, importAssetsOperation, exportAssetsOperation, exportAssetReportOperation,
   }) {
+    this.exportAssetReportOperation = exportAssetReportOperation;
     this.listAssetsOperation = listAssetsOperation;
     this.getAssetOperation = getAssetOperation;
     this.getAssetFacetsOperation = getAssetFacetsOperation;
@@ -52,6 +53,10 @@ class AssetController {
 
   async exportFile(req, res) {
     sendFile(res, await this.exportAssetsOperation.execute(req.query));
+  }
+
+  async report(req, res) {
+    sendFile(res, await this.exportAssetReportOperation.execute({ asset_id: req.params.asset_id }));
   }
 }
 

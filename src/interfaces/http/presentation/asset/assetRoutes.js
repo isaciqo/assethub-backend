@@ -21,5 +21,6 @@ module.exports = [
   },
   { method: 'post', path: '/assets', handler: 'assetController.create', middlewares: [authMiddleware, managers], validation: { body: schema.create }, swagger: doc('Assets', 'Cadastra bem') },
   { method: 'get', path: '/assets/:asset_id', handler: 'assetController.detail', middlewares: [authMiddleware], validation: { params: schema.byId }, swagger: doc('Assets', 'Visão 360 do bem: cadastro, histórico, conferências e movimentações') },
+  { method: 'get', path: '/assets/:asset_id/report.pdf', handler: 'assetController.report', middlewares: [authMiddleware], validation: { params: schema.byId }, swagger: doc('Assets', 'Relatório resumo do bem em PDF (situação, pendências, conferências, movimentações e linha do tempo)') },
   { method: 'patch', path: '/assets/:asset_id', handler: 'assetController.update', middlewares: [authMiddleware, managers], validation: { params: schema.byId, body: schema.update }, swagger: doc('Assets', 'Edita cadastro do bem (gera evento no histórico)') },
 ];
