@@ -1,5 +1,7 @@
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const MapService = require('./MapService');
+const GeoService = require('./GeoService');
 
 // Paleta da marca (cerâmica marajoara): argila, caulim, jenipapo, ocre.
 const C = {
@@ -40,6 +42,17 @@ const LABELS = {
   },
 };
 
+const fmtDist = m => (m >= 1000 ? `${(m / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km` : `${m} m`);
+
+// "Na unidade · 25 m", "Fora da unidade · 4,4 km" ou as coordenadas, quando a unidade não tem ponto fixado.
+const gpsLabel = g => {
+  if (!g || g.lat == null) return 'Sem localização';
+  if (g.distance_m != null) return `${g.outside_unit ? 'Fora da unidade' : 'Na unidade'} · ${fmtDist(g.distance_m)}`;
+  return `${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}${g.accuracy ? ` (±${g.accuracy} m)` : ''}`;
+};
+const pinColor = g => (g.distance_m == null ? MapService.COLORS.pin : g.outside_unit ? MapService.COLORS.out : MapService.COLORS.ok);
+const unitPoint = u => (u?.geo?.lat != null ? { lat: u.geo.lat, lng: u.geo.lng } : null);
+
 const fmtDate = d => (d ? new Date(d).toLocaleString('pt-BR', { timeZone: 'America/Belem' }) : '—');
 
 function collect(doc) {
@@ -75,7 +88,8 @@ function header(doc, title, subtitle) {
 }
 
 function sectionTitle(doc, text) {
-  ensureSpace(doc, 40);
+  // Título nunca fica sozinho no pé da página: precisa caber pelo menos o começo do conteúdo.
+  ensureSpace(doc, 70);
   doc.moveDown(0.6);
   const y = doc.y;
   doc.rect(40, y, 4, 12).fill(C.urucum);
@@ -120,6 +134,9 @@ function table(doc, columns, rows) {
     doc.y = y + 16;
   };
 
+  // Cabeçalho só começa se couber a primeira linha junto.
+  const firstH = rows.length ? Math.max(...columns.map((c, i) => doc.font('Helvetica').fontSize(8).heightOfString(String(rows[0][c.key] ?? '—'), { width: widths[i] - 8 }))) + 8 : 0;
+  ensureSpace(doc, 16 + firstH);
   drawHeader();
   rows.forEach((row, r) => {
     const heights = columns.map((c, i) => doc.font('Helvetica').fontSize(8).heightOfString(String(row[c.key] ?? '—'), { width: widths[i] - 8 }));
@@ -152,6 +169,20 @@ function footer(doc, text) {
 }
 
 class PdfService {
+  constructor({ mapService } = {}) {
+    this.mapService = mapService || new MapService();
+  }
+
+  // Mapa com legenda; sem pontos de GPS, não desenha nada.
+  async map(doc, { title, legend, points, unit, height = 190 }) {
+    if (!points.length) return;
+    ensureSpace(doc, height + 48);
+    if (title) sectionTitle(doc, title);
+    if (legend) doc.fillColor(C.muted).font('Helvetica').fontSize(7.5).text(legend, 40, doc.y, { width: doc.page.width - 80 });
+    const y = doc.y + 4;
+    await this.mapService.draw(doc, { x: 40, y, width: doc.page.width - 80, height, points, unit, radiusM: unit ? GeoService.UNIT_RADIUS_M : null });
+  }
+
   async movementTerm({ movement, assets, units, users, events, signatures, photos, chain, verifyUrl }) {
     const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `Termo ${movement.number}` } });
     const done = collect(doc);
@@ -266,6 +297,17 @@ class PdfService {
       notes.forEach(n => doc.text(`• ${n}`, 40, doc.y, { width: doc.page.width - 80 }));
     }
 
+    const handoverPoints = [['E', movement.delivery?.geo], ['R', movement.receipt?.geo]]
+      .filter(([, g]) => g && g.lat != null)
+      .map(([label, g]) => ({ lat: g.lat, lng: g.lng, label, color: pinColor(g) }));
+    await this.map(doc, {
+      title: 'Onde o envio e o recebimento foram confirmados',
+      legend: `E = envio (${gpsLabel(movement.delivery?.geo)}) · R = recebimento (${gpsLabel(movement.receipt?.geo)}). Quadrado escuro e círculo: ponto e área da unidade de origem. Verde: na unidade; vermelho: fora.`,
+      points: handoverPoints,
+      unit: unitPoint(units[movement.origin.unit_id]),
+      height: 150,
+    });
+
     if (photos.length) {
       sectionTitle(doc, `Evidências fotográficas (${photos.length})`);
       table(doc, [
@@ -303,7 +345,7 @@ class PdfService {
     return done;
   }
 
-  async inventoryReport({ inventory, unit, summary, discrepancies, byLocation }) {
+  async inventoryReport({ inventory, unit, summary, discrepancies, byLocation, geo = null }) {
     const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `Relatório ${inventory.number}` } });
     const done = collect(doc);
 
@@ -331,6 +373,33 @@ class PdfService {
         { key: 'checked', header: 'CONFERIDOS', weight: 1 },
         { key: 'pct', header: '%', weight: 0.7 },
       ], byLocation.map(l => ({ ...l, pct: `${l.expected ? Math.round((l.checked / l.expected) * 100) : 0}%` })));
+    }
+
+    if (geo && geo.total) {
+      sectionTitle(doc, 'Localização das conferências (GPS)');
+      keyValue(doc, [
+        ['Com localização', `${geo.withGps} de ${geo.total}`],
+        ['Na unidade', geo.unitHasPoint ? String(geo.inside) : 'Ponto da unidade não fixado'],
+        ['Fora da unidade', geo.unitHasPoint ? String(geo.outside) : '—'],
+        ['Sem localização', String(geo.total - geo.withGps)],
+      ], 4);
+      await this.map(doc, {
+        legend: `Cada alfinete é uma conferência${geo.points.length < geo.withGps ? ` (as ${geo.points.length} primeiras)` : ''}. Verde: na unidade (até ${GeoService.UNIT_RADIUS_M} m do ponto, somada a precisão do GPS); vermelho: fora; laranja: unidade sem ponto fixado.`,
+        points: geo.points.map(g => ({ lat: g.lat, lng: g.lng, color: pinColor(g) })),
+        unit: unitPoint(unit),
+      });
+      if (geo.outsideRows.length) {
+        doc.moveDown(0.4);
+        doc.fillColor(C.ink).font('Helvetica-Bold').fontSize(9).text(`Conferências feitas fora da unidade (${geo.outsideRows.length})`, 40, doc.y);
+        doc.moveDown(0.3);
+        table(doc, [
+          { key: 'code', header: 'TOMBAMENTO', weight: 1 },
+          { key: 'by', header: 'CONFERIDO POR', weight: 1.6 },
+          { key: 'at', header: 'DATA', weight: 1.4 },
+          { key: 'gps', header: 'LOCAL', weight: 1.6 },
+          { key: 'coords', header: 'COORDENADAS', weight: 1.8 },
+        ], geo.outsideRows.map(r => ({ ...r, gps: gpsLabel(r.geo), coords: `${r.geo.lat.toFixed(5)}, ${r.geo.lng.toFixed(5)}` })));
+      }
     }
 
     sectionTitle(doc, `Pendências (${discrepancies.length})`);
@@ -422,13 +491,15 @@ class PdfService {
       doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('O bem ainda não foi conferido.', 40, doc.y);
     } else {
       table(doc, [
-        { key: 'at', header: 'DATA', weight: 1.3 },
-        { key: 'inventory', header: 'INVENTÁRIO', weight: 1.1 },
-        { key: 'by', header: 'CONFERIDO POR', weight: 1.4 },
-        { key: 'location', header: 'ONDE ESTAVA', weight: 1.6 },
+        { key: 'n', header: '#', weight: 0.3 },
+        { key: 'at', header: 'DATA', weight: 1.2 },
+        { key: 'inventory', header: 'INVENTÁRIO', weight: 1 },
+        { key: 'by', header: 'CONFERIDO POR', weight: 1.2 },
+        { key: 'location', header: 'ONDE ESTAVA', weight: 1.4 },
         { key: 'condition', header: 'ESTADO', weight: 0.8 },
-        { key: 'result', header: 'RESULTADO', weight: 1.2 },
-      ], checks.map(c => ({ ...c, at: fmtDate(c.at), condition: cons(c.condition) })));
+        { key: 'result', header: 'RESULTADO', weight: 1.1 },
+        { key: 'gps', header: 'GPS', weight: 1.3 },
+      ], checks.map((c, i) => ({ ...c, n: String(i + 1), at: fmtDate(c.at), condition: cons(c.condition), gps: gpsLabel(c.geo) })));
     }
 
     sectionTitle(doc, `Movimentações (${movements.length})`);
@@ -436,13 +507,34 @@ class PdfService {
       doc.fillColor(C.muted).font('Helvetica').fontSize(9).text('O bem nunca foi movimentado.', 40, doc.y);
     } else {
       table(doc, [
-        { key: 'number', header: 'NÚMERO', weight: 1.1 },
-        { key: 'type', header: 'TIPO', weight: 1.6 },
-        { key: 'route', header: 'DE » PARA', weight: 3 },
-        { key: 'status', header: 'SITUAÇÃO', weight: 1.1 },
-        { key: 'at', header: 'ABERTA EM', weight: 1.3 },
-      ], movements.map(m => ({ ...m, status: LABELS.status[m.status] || m.status, at: fmtDate(m.at) })));
+        { key: 'n', header: '#', weight: 0.3 },
+        { key: 'number', header: 'NÚMERO', weight: 1.35 },
+        { key: 'type', header: 'TIPO', weight: 1.2 },
+        { key: 'route', header: 'DE » PARA', weight: 2.2 },
+        { key: 'status', header: 'SITUAÇÃO', weight: 0.95 },
+        { key: 'at', header: 'ABERTA EM', weight: 1.1 },
+        { key: 'gps', header: 'GPS ENVIO / RECEB.', weight: 1.6 },
+      ], movements.map((m, i) => ({
+        ...m,
+        n: String(i + 1),
+        status: LABELS.status[m.status] || m.status,
+        at: fmtDate(m.at),
+        gps: `${m.deliveryGeo ? gpsLabel(m.deliveryGeo) : '—'} / ${m.receiptGeo ? gpsLabel(m.receiptGeo) : '—'}`,
+      })));
     }
+
+    // Mapa de tudo o que tem GPS: conferências (#) e envio/recebimento (E#/R#).
+    const mapPoints = [
+      ...checks.map((c, i) => (c.geo && c.geo.lat != null ? { lat: c.geo.lat, lng: c.geo.lng, label: String(i + 1), color: pinColor(c.geo) } : null)),
+      ...movements.flatMap((m, i) => [['E', m.deliveryGeo], ['R', m.receiptGeo]]
+        .map(([k, g]) => (g && g.lat != null ? { lat: g.lat, lng: g.lng, label: `${k}${i + 1}`, color: pinColor(g) } : null))),
+    ].filter(Boolean);
+    await this.map(doc, {
+      title: 'Onde o bem foi conferido e movimentado',
+      legend: 'Número = # da conferência; E1/R1 = envio/recebimento da movimentação #1. Verde: na unidade; vermelho: fora; laranja: unidade sem ponto fixado. Quadrado escuro e círculo: ponto e área da unidade do bem.',
+      points: mapPoints,
+      unit: unitPoint(unit),
+    });
 
     sectionTitle(doc, `Linha do tempo${totalEvents > events.length ? ` (últimos ${events.length} de ${totalEvents})` : ''}`);
     if (!events.length) {

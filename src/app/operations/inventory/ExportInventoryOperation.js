@@ -87,10 +87,28 @@ class ExportInventoryOperation {
       note: d.resolution?.note || '',
     }));
 
+    // GPS das conferências (só as primárias): prova de onde cada uma foi feita.
+    const primary = checks.filter(c => c.is_primary);
+    const located = primary.filter(c => c.geo && c.geo.lat != null);
+    const geo = {
+      total: primary.length,
+      withGps: located.length,
+      inside: located.filter(c => c.geo.distance_m != null && !c.geo.outside_unit).length,
+      outside: located.filter(c => c.geo.outside_unit).length,
+      unitHasPoint: unit?.geo?.lat != null,
+      points: located.slice(0, 80).map(c => c.geo),
+      outsideRows: located.filter(c => c.geo.outside_unit).map(c => ({
+        code: c.asset_code,
+        by: c.checked_by_name,
+        at: fmt(c.checked_at),
+        geo: c.geo,
+      })),
+    };
+
     if (format === 'pdf') {
       // A fonte padrão do PDF não tem "→"; "»" existe nela.
       const pdfRows = discRows.map(r => ({ ...r, detail: r.detail.replace(/→/g, '»') }));
-      const buffer = await this.pdfService.inventoryReport({ inventory, unit, summary, discrepancies: pdfRows, byLocation: summary.byLocation || [] });
+      const buffer = await this.pdfService.inventoryReport({ inventory, unit, summary, discrepancies: pdfRows, byLocation: summary.byLocation || [], geo });
       return { buffer, mime: 'application/pdf', fileName: `relatorio-${base}.pdf` };
     }
 
@@ -108,6 +126,11 @@ class ExportInventoryOperation {
       { key: 'checked_at', header: 'Data/hora', width: 20 },
       { key: 'offline', header: 'Offline', width: 9 },
       { key: 'notes', header: 'Observações', width: 30 },
+      { key: 'lat', header: 'Latitude', width: 12 },
+      { key: 'lng', header: 'Longitude', width: 12 },
+      { key: 'accuracy', header: 'Precisão GPS (m)', width: 14 },
+      { key: 'distance', header: 'Distância da unidade (m)', width: 18 },
+      { key: 'where', header: 'Local da conferência', width: 18 },
     ];
     const checkRows = checks.map(c => ({
       code: c.asset_code,
@@ -123,6 +146,11 @@ class ExportInventoryOperation {
       checked_at: fmt(c.checked_at),
       offline: c.was_offline ? 'Sim' : 'Não',
       notes: c.notes,
+      lat: c.geo?.lat ?? '',
+      lng: c.geo?.lng ?? '',
+      accuracy: c.geo?.accuracy ?? '',
+      distance: c.geo?.distance_m ?? '',
+      where: !c.geo || c.geo.lat == null ? 'Sem localização' : c.geo.distance_m == null ? 'Unidade sem ponto fixado' : c.geo.outside_unit ? 'Fora da unidade' : 'Na unidade',
     }));
 
     if (format === 'csv') {

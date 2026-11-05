@@ -71,6 +71,7 @@ class ExportAssetReportOperation {
         location: c.observed_location || '—',
         condition: c.observed_condition,
         result: CHECK_RESULT[c.check_status] || c.check_status,
+        geo: c.geo || null,
       })),
       totalChecks: checks.length,
       movements: movements.map(m => ({
@@ -79,6 +80,8 @@ class ExportAssetReportOperation {
         route: `${place(m.origin.unit_id, m.origin.location)} » ${place(m.destination.unit_id, m.destination.location)}`,
         status: m.status,
         at: m.createdAt,
+        deliveryGeo: m.delivery?.geo || null,
+        receiptGeo: m.receipt?.geo || null,
       })),
       events: events.slice(0, 30).map(e => ({ at: e.occurred_at, type: e.event_type, summary: e.summary, by: e.performed_by_name || '—' })),
       totalEvents: events.length,
