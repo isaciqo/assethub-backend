@@ -22,6 +22,9 @@ const assetSchema = new mongoose.Schema({
   conservation_status: { type: String, enum: CONSERVATION_STATUS, default: 'bom' },
   status: { type: String, enum: ASSET_STATUS, default: 'ativo' },
   acquisition_date: { type: Date, default: null },
+  // Origem da compra: nº da nota fiscal e do processo de compra (SEI/PAE).
+  invoice_number: { type: String, default: '' },
+  purchase_process: { type: String, default: '' },
   value: { type: Number, default: null },
   notes: { type: String, default: '' },
   last_checked_at: { type: Date, default: null },

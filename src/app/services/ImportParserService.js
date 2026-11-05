@@ -20,6 +20,8 @@ const FIELD_ALIASES = {
   acquisition_date: ['data aquisicao', 'data de aquisicao', 'aquisicao', 'data incorporacao', 'data de incorporacao'],
   value: ['valor', 'valor aquisicao', 'valor de aquisicao', 'valor contabil', 'valor (r$)'],
   notes: ['observacao', 'observacoes', 'obs'],
+  invoice_number: ['nota fiscal', 'n nota fiscal', 'numero da nota fiscal', 'numero nota fiscal', 'nf', 'n nf', 'numero nf', 'nfe', 'nf-e', 'numero da nota'],
+  purchase_process: ['processo de compra', 'processo', 'n processo', 'numero do processo', 'processo administrativo', 'processo licitatorio', 'n do processo'],
 };
 
 const FIELDS = Object.keys(FIELD_ALIASES);
@@ -131,8 +133,13 @@ class ImportParserService {
   parseDate(value) {
     if (!value) return null;
     const s = String(value).trim();
+    // Datas só de dia ficam ao meio-dia UTC: meia-noite UTC aparecia como o dia
+    // anterior no fuso de Belém (12/03 virava 11/03).
     const br = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    const d = br ? new Date(Number(br[3]), Number(br[2]) - 1, Number(br[1])) : new Date(s);
+    const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const d = br ? new Date(Date.UTC(Number(br[3]), Number(br[2]) - 1, Number(br[1]), 12))
+      : ymd ? new Date(Date.UTC(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]), 12))
+        : new Date(s);
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
@@ -185,6 +192,9 @@ class ImportParserService {
         acquisition_date: this.parseDate(get('acquisition_date')),
         value: this.parseNumber(get('value')),
         notes: get('notes'),
+        // Colunas novas: sem a coluna na planilha, o cadastro existente fica como está.
+        invoice_number: index.invoice_number !== undefined ? get('invoice_number') : undefined,
+        purchase_process: index.purchase_process !== undefined ? get('purchase_process') : undefined,
       });
     });
 

@@ -59,6 +59,8 @@ function formatAsset(a) {
     conservationStatus: a.conservation_status,
     status: a.status,
     acquisitionDate: iso(a.acquisition_date),
+    invoiceNumber: a.invoice_number || '',
+    purchaseProcess: a.purchase_process || '',
     value: a.value ?? null,
     notes: a.notes || '',
     lastCheckedAt: iso(a.last_checked_at),

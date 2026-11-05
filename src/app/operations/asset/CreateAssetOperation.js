@@ -29,6 +29,8 @@ class CreateAssetOperation {
       responsible_name: data.responsible_name || '',
       conservation_status: data.conservation_status || 'bom',
       acquisition_date: data.acquisition_date || null,
+      invoice_number: data.invoice_number || '',
+      purchase_process: data.purchase_process || '',
       value: data.value ?? null,
       notes: data.notes || '',
     });

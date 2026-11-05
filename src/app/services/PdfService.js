@@ -419,7 +419,7 @@ class PdfService {
     return done;
   }
 
-  async assetReport({ asset, unit, lastCheck, photo, openDiscrepancies, checks, totalChecks, movements, events, totalEvents }) {
+  async assetReport({ asset, unit, lastCheck, photo, attachments = [], openDiscrepancies, checks, totalChecks, movements, events, totalEvents }) {
     const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, info: { Title: `Bem ${asset.code}` } });
     const done = collect(doc);
     const W = doc.page.width - 80;
@@ -454,17 +454,21 @@ class PdfService {
       ['Responsável', asset.responsible_name || 'Sem responsável'],
       ['Estado de conservação', cons(asset.conservation_status)],
       ['Nº de série', asset.serial_number],
+      ['Nota fiscal', asset.invoice_number],
+      ['Processo de compra', asset.purchase_process],
       ['Aquisição', [asset.acquisition_date ? new Date(asset.acquisition_date).toLocaleDateString('pt-BR', { timeZone: 'America/Belem' }) : '', asset.value ? `R$ ${Number(asset.value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''].filter(Boolean).join(' · ')],
       ['Última conferência', lastCheck ? `${fmtDate(lastCheck.checked_at)} · ${lastCheck.checked_by_name || ''}` : 'Nunca conferido'],
       ['Em movimentação', asset.active_movement_id ? 'Sim, há uma movimentação em andamento' : 'Não'],
     ]);
     if (photo) {
       const x = 40 + W - 140;
+      // A legenda da foto move o cursor: guarda onde os dados terminaram.
+      const afterData = doc.y;
       try {
         doc.image(photo.data, x, top, { fit: [140, 140], align: 'center', valign: 'center' });
-        doc.fillColor(C.muted).font('Helvetica').fontSize(7).text(`Foto da conferência · ${fmtDate(photo.at)}${photo.by ? ` · ${photo.by}` : ''}`, x, top + 144, { width: 140, align: 'center' });
-        doc.y = Math.max(doc.y, top + 168);
-      } catch { /* imagem ilegível: o relatório sai sem a foto */ }
+        doc.fillColor(C.muted).font('Helvetica').fontSize(7).text(`${photo.source || 'Última foto'} · ${fmtDate(photo.at)}${photo.by ? ` · ${photo.by}` : ''}`, x, top + 144, { width: 140, align: 'center' });
+        doc.y = Math.max(afterData, doc.y + 6);
+      } catch { doc.y = afterData; /* imagem ilegível: o relatório sai sem a foto */ }
     }
 
     sectionTitle(doc, 'Resumo');
@@ -484,6 +488,17 @@ class PdfService {
         { key: 'origin', header: 'ORIGEM', weight: 1.4 },
         { key: 'at', header: 'ABERTA EM', weight: 1.4 },
       ], openDiscrepancies.map(d => ({ ...d, at: fmtDate(d.at) })));
+    }
+
+    if (attachments.length) {
+      sectionTitle(doc, `Documentos anexados (${attachments.length})`);
+      table(doc, [
+        { key: 'name', header: 'ARQUIVO', weight: 2.2 },
+        { key: 'stage', header: 'ANEXADO NA', weight: 1.2 },
+        { key: 'at', header: 'DATA', weight: 1.2 },
+        { key: 'by', header: 'POR', weight: 1.3 },
+        { key: 'hash', header: 'SHA-256 (INÍCIO)', weight: 1.3 },
+      ], attachments.map(a => ({ ...a, at: fmtDate(a.at), hash: `${a.hash.slice(0, 16)}…` })));
     }
 
     sectionTitle(doc, `Conferências${totalChecks > checks.length ? ` (últimas ${checks.length} de ${totalChecks})` : ` (${totalChecks})`}`);

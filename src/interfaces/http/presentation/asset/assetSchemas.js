@@ -39,6 +39,8 @@ module.exports = () => ({
     conservation_status: Joi.string().valid(...CONSERVATION_STATUS).optional(),
     acquisition_date: Joi.date().allow(null).optional(),
     value: Joi.number().min(0).allow(null).optional(),
+    invoice_number: Joi.string().allow('').max(60).optional(),
+    purchase_process: Joi.string().allow('').max(80).optional(),
     notes: Joi.string().allow('').optional(),
   }),
   update: Joi.object({
@@ -51,7 +53,15 @@ module.exports = () => ({
     responsible_name: Joi.string().allow('').optional(),
     conservation_status: Joi.string().valid(...CONSERVATION_STATUS).optional(),
     status: Joi.string().valid('ativo', 'nao_localizado', 'baixado').optional(),
+    // Anexos (BO, laudo, foto) — data URL, como as demais evidências.
+    attachments: Joi.array().max(5).items(Joi.object({
+      data_url: Joi.string().required(),
+      file_name: Joi.string().allow('').max(200).optional(),
+      description: Joi.string().allow('').max(300).optional(),
+    })).optional(),
     value: Joi.number().min(0).allow(null).optional(),
+    invoice_number: Joi.string().allow('').max(60).optional(),
+    purchase_process: Joi.string().allow('').max(80).optional(),
     notes: Joi.string().allow('').optional(),
   }),
   importBody: Joi.object({

@@ -5,7 +5,7 @@ const { normalizeCode, normalize } = require('../../../lib/text');
 const { formatUnit } = require('../../../lib/formatters');
 
 // Campos que a planilha oficial pode atualizar num bem já existente.
-const UPDATABLE = ['code', 'description', 'category', 'brand', 'serial_number', 'unit_id', 'location', 'room', 'responsible_name', 'conservation_status', 'acquisition_date', 'value', 'notes'];
+const UPDATABLE = ['code', 'description', 'category', 'brand', 'serial_number', 'unit_id', 'location', 'room', 'responsible_name', 'conservation_status', 'acquisition_date', 'value', 'invoice_number', 'purchase_process', 'notes'];
 
 function unitCodeFrom(name) {
   const words = normalize(name).split(' ').filter(w => w.length > 2 && !['de', 'da', 'do', 'das', 'dos'].includes(w));
@@ -108,6 +108,8 @@ class ImportAssetsOperation {
         acquisition_date: r.acquisition_date,
         value: r.value,
         notes: r.notes,
+        ...(r.invoice_number !== undefined && { invoice_number: r.invoice_number }),
+        ...(r.purchase_process !== undefined && { purchase_process: r.purchase_process }),
       };
       const current = existingMap.get(r.code_normalized);
 
@@ -121,6 +123,7 @@ class ImportAssetsOperation {
 
       const changes = {};
       UPDATABLE.forEach(field => {
+        if (!(field in data)) return;
         const before = current[field] instanceof Date ? current[field].toISOString().slice(0, 10) : (current[field] ?? '');
         const after = data[field] instanceof Date ? data[field].toISOString().slice(0, 10) : (data[field] ?? '');
         if (String(before) !== String(after)) changes[field] = { from: current[field] ?? null, to: data[field] ?? null };

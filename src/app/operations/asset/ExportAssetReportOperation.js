@@ -11,12 +11,12 @@ const CHECK_RESULT = {
 };
 
 // Relatório resumo do bem (PDF): como ele está hoje, o que está em aberto e
-// o histórico — conferências, movimentações e linha do tempo — com a foto da
-// última conferência que teve foto.
+// o histórico — conferências, movimentações e linha do tempo — com a última
+// foto feita do bem e os documentos anexados (BO, laudo da baixa…).
 class ExportAssetReportOperation {
   constructor({
     assetRepository, unitRepository, assetEventRepository, inventoryCheckRepository, movementRepository,
-    discrepancyRepository, inventoryRepository, evidenceRepository, pdfService,
+    discrepancyRepository, inventoryRepository, evidenceRepository, assetPhotoService, pdfService,
   }) {
     this.assetRepository = assetRepository;
     this.unitRepository = unitRepository;
@@ -26,6 +26,7 @@ class ExportAssetReportOperation {
     this.discrepancyRepository = discrepancyRepository;
     this.inventoryRepository = inventoryRepository;
     this.evidenceRepository = evidenceRepository;
+    this.assetPhotoService = assetPhotoService;
     this.pdfService = pdfService;
   }
 
@@ -46,19 +47,27 @@ class ExportAssetReportOperation {
     const unitName = Object.fromEntries(units.map(u => [u.unit_id, u.name]));
     const place = (unit_id, location) => [unitName[unit_id] !== unit?.name ? unitName[unit_id] : '', location].filter(Boolean).join(' · ') || '—';
 
-    // Foto da conferência mais recente que tem foto (as conferências vêm da mais nova para a mais antiga).
+    // Última foto do bem (conferência, movimentação ou anexo) e documentos anexados.
     let photo = null;
-    const withPhoto = checks.find(c => c.photo_evidence_id);
-    if (withPhoto) {
-      const ev = await this.evidenceRepository.findById(withPhoto.photo_evidence_id);
-      if (ev && /^image\/(jpe?g|png)$/.test(ev.mime)) photo = { data: ev.data, at: withPhoto.checked_at, by: withPhoto.checked_by_name };
+    const latest = await this.assetPhotoService.latest(asset.asset_id, { checks, movements });
+    if (latest) {
+      const ev = await this.evidenceRepository.findById(latest.evidence_id);
+      if (ev) photo = { data: ev.data, at: latest.at, by: latest.by, source: latest.source };
     }
+    const attachments = (await this.evidenceRepository.findMetaByOwner('asset', asset.asset_id)).map(e => ({
+      name: e.file_name || (e.kind === 'foto' ? 'Foto' : 'Documento'),
+      stage: { baixa: 'Baixa', nao_localizado: 'Não localizado' }[e.stage] || 'Ajuste no cadastro',
+      at: e.createdAt,
+      by: e.created_by_name || '—',
+      hash: e.sha256,
+    }));
 
     const buffer = await this.pdfService.assetReport({
       asset,
       unit,
       lastCheck: checks[0] || null,
       photo,
+      attachments,
       openDiscrepancies: discrepancies.filter(d => d.status === 'aberta').map(d => ({
         type: ExportInventoryOperation.DISCREPANCY_LABEL[d.type] || d.type,
         origin: invNumber[d.inventory_id] || (d.inventory_id ? 'Inventário' : 'Validação do servidor'),
