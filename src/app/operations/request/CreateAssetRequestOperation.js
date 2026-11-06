@@ -47,7 +47,10 @@ class CreateAssetRequestOperation {
       if (owner && owner.user_id !== actor.user_id) status = 'aguardando_setor';
     }
 
-    const catalog = REQUEST_CATALOG.find(c => normalize(c.item) === normalize(data.item));
+    // Item digitado ("Mouse sem fio") também acha a categoria pelo item do catálogo
+    // contido no texto — sem categoria, não há bem parado para sugerir.
+    const catalog = REQUEST_CATALOG.find(c => normalize(c.item) === normalize(data.item))
+      || REQUEST_CATALOG.find(c => normalize(data.item).includes(normalize(c.item).split(' ')[0]));
     const request_id = uuidv4();
     const number = await this.numberingService.next('SOL');
 

@@ -84,6 +84,8 @@ const REQUEST_CATALOG = [
   { item: 'Monitor', category: 'Informática' },
   { item: 'Notebook', category: 'Informática' },
   { item: 'Computador', category: 'Informática' },
+  { item: 'Mouse', category: 'Informática' },
+  { item: 'Teclado', category: 'Informática' },
   { item: 'Impressora', category: 'Informática' },
   { item: 'Ar-condicionado', category: 'Climatização' },
 ];

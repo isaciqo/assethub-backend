@@ -35,15 +35,19 @@ class AssetRequestService {
 
   // Bens parados que podem atender o pedido antes de qualquer compra: ativos,
   // sem movimentação em curso, em bom estado e sem dono (ou guardados num
-  // almoxarifado), da mesma categoria. Primeiro os da mesma comarca.
+  // almoxarifado), da mesma categoria. Primeiro o que é o próprio item pedido
+  // (pedido de mouse mostra o mouse antes dos notebooks), depois os da mesma comarca.
   async availableFor(request) {
     if (!request.category) return [];
     const assets = await this.assetRepository.findAll({ category: request.category, status: 'ativo' });
     const rank = { novo: 0, bom: 1, regular: 2 };
     const stored = a => /almoxarifado|deposito/.test(normalize(`${a.location} ${a.room}`));
+    const word = normalize(request.item).split(' ')[0];
+    const same = a => (word && normalize(a.description).includes(word) ? 0 : 1);
     return assets
       .filter(a => !a.active_movement_id && a.conservation_status in rank && (!String(a.responsible_name || '').trim() || stored(a)))
-      .sort((a, b) => (a.unit_id === request.unit_id ? 0 : 1) - (b.unit_id === request.unit_id ? 0 : 1)
+      .sort((a, b) => same(a) - same(b)
+        || (a.unit_id === request.unit_id ? 0 : 1) - (b.unit_id === request.unit_id ? 0 : 1)
         || rank[a.conservation_status] - rank[b.conservation_status]
         || String(a.code).localeCompare(String(b.code)));
   }
