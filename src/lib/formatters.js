@@ -258,6 +258,8 @@ function formatPossessionCheck(c) {
     userId: c.user_id,
     userName: c.user_name,
     requestedByName: c.requested_by_name || '',
+    inventoryId: c.inventory_id || null,
+    inventoryNumber: c.inventory_number || '',
     status: c.status,
     items: c.items.map(i => ({
       assetId: i.asset_id, code: i.code, description: i.description, location: i.location, hasIt: i.has_it, note: i.note || '',

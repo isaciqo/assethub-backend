@@ -1,5 +1,6 @@
 class PossessionController {
-  constructor({ getMyAreaOperation, createPossessionChecksOperation, listPossessionChecksOperation, answerPossessionCheckOperation }) {
+  constructor({ getMyAreaOperation, createPossessionChecksOperation, listPossessionChecksOperation, answerPossessionCheckOperation, startInventoryValidationOperation }) {
+    this.startInventoryValidationOperation = startInventoryValidationOperation;
     this.getMyAreaOperation = getMyAreaOperation;
     this.createPossessionChecksOperation = createPossessionChecksOperation;
     this.listPossessionChecksOperation = listPossessionChecksOperation;
@@ -16,6 +17,10 @@ class PossessionController {
 
   async list(req, res) {
     res.status(200).json(await this.listPossessionChecksOperation.execute());
+  }
+
+  async startInventoryValidation(req, res) {
+    res.status(201).json(await this.startInventoryValidationOperation.execute({ actor: req.user, inventory_id: req.params.inventory_id }));
   }
 
   async answer(req, res) {

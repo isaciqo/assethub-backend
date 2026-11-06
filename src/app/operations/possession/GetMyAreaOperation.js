@@ -1,10 +1,13 @@
-const { formatAsset, formatAssetRequest, formatPossessionCheck } = require('../../../lib/formatters');
+const { formatAsset, formatAssetRequest, formatPossessionCheck, iso } = require('../../../lib/formatters');
 
 // Tudo o que a pessoa precisa ver na tela dela: os bens no seu nome e as
 // tarefas que o gerente gerou (enviar, confirmar recebimento, validar) e os
-// pedidos de bens: os feitos ao setor dela e os dela que o setor negou.
+// pedidos de bens: os feitos ao setor dela e os dela que o setor negou. Também
+// avisa dos inventários abertos que incluem bens dela, para ela validar.
 class GetMyAreaOperation {
-  constructor({ assetRepository, movementRepository, userRepository, possessionCheckRepository, assetRequestRepository }) {
+  constructor({ assetRepository, movementRepository, userRepository, possessionCheckRepository, assetRequestRepository, inventoryRepository, unitRepository }) {
+    this.inventoryRepository = inventoryRepository;
+    this.unitRepository = unitRepository;
     this.assetRequestRepository = assetRequestRepository;
     this.assetRepository = assetRepository;
     this.movementRepository = movementRepository;
@@ -30,10 +33,18 @@ class GetMyAreaOperation {
       }),
     ]);
 
-    const [movAssets, people] = await Promise.all([
+    const myIds = assets.map(a => a.asset_id);
+    const inventories = myIds.length
+      ? await this.inventoryRepository.find({ status: 'em_andamento', expected_asset_ids: { $in: myIds } })
+      : [];
+
+    const [movAssets, people, units, validations] = await Promise.all([
       this.assetRepository.findByIds([...new Set(movements.flatMap(m => m.asset_ids))]),
-      this.userRepository.findByIds([...new Set(movements.flatMap(m => [m.deliverer_id, m.receiver_id]))]),
+      this.userRepository.findByIds([...new Set([...movements.flatMap(m => [m.deliverer_id, m.receiver_id]), ...inventories.map(i => i.created_by)])]),
+      inventories.length ? this.unitRepository.findAll() : [],
+      inventories.length ? this.possessionCheckRepository.find({ user_id: actor.user_id, inventory_id: { $in: inventories.map(i => i.inventory_id) } }) : [],
     ]);
+    const unitName = Object.fromEntries(units.map(u => [u.unit_id, u.name]));
     const assetMap = Object.fromEntries(movAssets.map(a => [a.asset_id, { code: a.code, description: a.description }]));
     const nameOf = Object.fromEntries(people.map(u => [u.user_id, u.name]));
 
@@ -49,8 +60,26 @@ class GetMyAreaOperation {
       createdAt: m.createdAt,
     });
 
+    // Aviso de inventário: quantos bens dela estão nele e se ela já validou.
+    const mine = new Set(myIds);
+    const notices = inventories.map(inv => {
+      const validation = validations.filter(v => v.inventory_id === inv.inventory_id).sort((a, b) => b.createdAt - a.createdAt)[0];
+      return {
+        id: inv.inventory_id,
+        number: inv.number,
+        name: inv.name,
+        unitName: unitName[inv.unit_id] || '',
+        locations: inv.locations,
+        startedAt: iso(inv.started_at),
+        startedByName: nameOf[inv.created_by] || '',
+        myAssets: inv.expected_asset_ids.filter(id => mine.has(id)).length,
+        validation: validation ? { id: validation.check_id, status: validation.status, answeredAt: iso(validation.answered_at) } : null,
+      };
+    });
+
     return {
       assets: assets.map(formatAsset),
+      inventories: notices,
       tasks: [
         ...movements.map(task),
         ...checks.map(c => ({ kind: 'validar', check: formatPossessionCheck(c), createdAt: c.createdAt })),

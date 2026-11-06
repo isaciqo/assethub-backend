@@ -9,6 +9,15 @@ module.exports = [
   { method: 'get', path: '/me/area', handler: 'possessionController.myArea', middlewares: [authMiddleware], servidor: true, swagger: doc('Me', 'Meus bens e minhas tarefas (enviar, receber, validar)') },
   {
     method: 'post',
+    path: '/me/inventories/:inventory_id/validation',
+    handler: 'possessionController.startInventoryValidation',
+    middlewares: [authMiddleware],
+    servidor: true,
+    validation: { params: Joi.object({ inventory_id: Joi.string().required() }) },
+    swagger: doc('Me', 'Abre a validação dos meus bens que estão num inventário aberto'),
+  },
+  {
+    method: 'post',
     path: '/me/possession-checks/:check_id/answer',
     handler: 'possessionController.answer',
     middlewares: [authMiddleware],

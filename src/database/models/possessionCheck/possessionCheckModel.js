@@ -18,6 +18,10 @@ const possessionCheckSchema = new mongoose.Schema({
   user_name: { type: String, required: true },
   requested_by: { type: String, required: true },
   requested_by_name: { type: String, default: '' },
+  // Validação feita por causa de um inventário aberto (a pessoa valida os bens
+  // dela que estão no inventário). Vazio = pedida avulsa pelo gerente.
+  inventory_id: { type: String, default: null },
+  inventory_number: { type: String, default: '' },
   status: { type: String, enum: ['pendente', 'respondida'], default: 'pendente' },
   items: { type: [itemSchema], default: [] },
   answered_at: { type: Date, default: null },
